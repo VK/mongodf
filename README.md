@@ -27,7 +27,7 @@ df = df[(df.colA == "Test") & (df.ColB == 2)]
 df = df[["colA", "colC"]]
 
 # compute a pandas.DataFrame
-filteredB.compute()
+df.compute()
 ```
 
 |   | colA  | colC |
