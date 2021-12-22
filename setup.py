@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
     name='mongodf',
-    url="https://github.com/VK/mlflow-pyfunc-server",
+    url="https://github.com/VK/mongodf",
     version=mongodf.__version__,
     packages=find_packages(),
     license = "MIT",
