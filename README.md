@@ -21,7 +21,7 @@ mongo = pymongo.MongoClient("mongodb://mongo:27017")
 df = mongodf.from_mongo(mongo, "DB", "Collection")
 
 # filter values
-df = df[(df.colA == "Test") & (df.ColB == 2)]
+df = df[(df["colA"] == "Test") & (df.ColB.isin([1, 2]))]
 
 # filter columns
 df = df[["colA", "colC"]]
