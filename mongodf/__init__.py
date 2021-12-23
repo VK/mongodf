@@ -1,5 +1,3 @@
-__version__ = "0.0.2"
-
 from .column import Column
 from .filter import Filter
 from .dataframe import DataFrame
@@ -26,3 +24,6 @@ def from_mongo(mongo, database, collection):
     mf = DataFrame(mongo, _db, _coll, _columns)
     mf._filter = Filter(mf, {})
     return mf
+
+
+__all__ = ["Column", "Filter", "DataFrame", "from_mongo"]
