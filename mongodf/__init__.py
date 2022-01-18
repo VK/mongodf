@@ -21,6 +21,8 @@ def from_mongo(mongo, database, collection):
         }}
     ]))[0]["keys"]
 
+    _columns = [c for c in _columns if c != "_id"]
+
     mf = DataFrame(mongo, _db, _coll, _columns)
     mf._filter = Filter(mf, {})
     return mf
