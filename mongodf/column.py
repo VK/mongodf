@@ -1,6 +1,7 @@
 from .filter import Filter
 import numpy as _np
 import pandas as _pd
+import datetime
 
 
 class Column():
@@ -8,26 +9,31 @@ class Column():
         self._mf = dataframe
         self._name = name
 
+    def _encode_value(self, value):
+        if isinstance(value, _np.datetime64):
+            return _pd.Timestamp(value).to_pydatetime()
+        return value
+
     def isin(self, array):
         return Filter(self._mf, {self._name: {"$in": array}})
 
     def __eq__(self, value):
-        return Filter(self._mf, {self._name: {"$eq": value}})
+        return Filter(self._mf, {self._name: {"$eq": self._encode_value(value)}})
 
     def __ne__(self, value):
-        return Filter(self._mf, {self._name: {"$ne": value}})
+        return Filter(self._mf, {self._name: {"$ne": self._encode_value(value)}})
 
     def __ge__(self, value):
-        return Filter(self._mf, {self._name: {"$gte": value}})
+        return Filter(self._mf, {self._name: {"$gte": self._encode_value(value)}})
 
     def __gt__(self, value):
-        return Filter(self._mf, {self._name: {"$gt": value}})
+        return Filter(self._mf, {self._name: {"$gt": self._encode_value(value)}})
 
     def __lt__(self, value):
-        return Filter(self._mf, {self._name: {"$lt": value}})
+        return Filter(self._mf, {self._name: {"$lt": self._encode_value(value)}})
 
     def __le__(self, value):
-        return Filter(self._mf, {self._name: {"$lte": value}})
+        return Filter(self._mf, {self._name: {"$lte": self._encode_value(value)}})
 
     def unique(self):
 

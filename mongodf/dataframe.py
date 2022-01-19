@@ -1,4 +1,3 @@
-
 from .filter import Filter
 from .column import Column
 from .exception import MongoDfException
@@ -48,7 +47,7 @@ class DataFrame():
         else:
             raise MongoDfException(f"column {key} not found!")
 
-    def compute(self):
+    def compute(self, **kwargs):
         colfilter = {"_id": 0}
         colfilter.update({c: 1 for c in self.columns})
 
