@@ -7,12 +7,20 @@ from itertools import cycle, islice
 
 class DataFrame():
 
-    def __init__(self, _mongo, _database, _collection, _columns, _filter=None):
+    def __init__(self, _mongo, _database, _collection, _columns,
+                 list_columns=[], filter=None, array_expand=True):
         self._mongo = _mongo
         self._database = _database
         self._collection = _collection
         self.columns = _columns
-        self._filter = _filter
+        self._filter = filter
+        self._array_expand = array_expand
+        if isinstance(list_columns, list):
+            self.list_columns = set(list_columns)
+        elif isinstance(list_columns, set):
+            self.list_columns = list_columns
+        else:
+            self.list_columns = set([])
 
     def __getitem__(self, key):
         if isinstance(key, Filter):
@@ -21,7 +29,9 @@ class DataFrame():
                 self._database,
                 self._collection,
                 self.columns,
-                key.__and__(self._filter)
+                filter=key.__and__(self._filter),
+                array_expand=self._array_expand,
+                list_columns=self.list_columns
             )
 
         if isinstance(key, list):
@@ -33,7 +43,9 @@ class DataFrame():
                 self._database,
                 self._collection,
                 key,
-                self._filter
+                filter=self._filter,
+                array_expand=self._array_expand,
+                list_columns=self.list_columns
             )
 
         if key in self.columns:
@@ -49,16 +61,36 @@ class DataFrame():
 
     def compute(self, **kwargs):
         colfilter = {"_id": 0}
-        colfilter.update({c: 1 for c in self.columns})
+        colfilter.update(
+            {c: 1 for c in list(set([*self.columns, *self._filter.config.keys()]))})
 
-        return _pd.DataFrame(
-            list(self._collection.find(
-                self._filter.config,
-                colfilter
-            ))
+        query_data = self._collection.find(
+            self._filter.config,
+            colfilter
         )
 
-    def example(self, n=5):
+        if self._array_expand:
+
+            def create_df(d):
+                try:
+                    return _pd.DataFrame(d)
+                except:
+                    return _pd.DataFrame(d, index=[0])
+
+            res_df = _pd.concat([
+                create_df(d) for d in query_data
+            ])
+
+            if len(self._filter.config) != 0:
+                res_df = res_df[self._filter.func(res_df)]
+
+            res_df = res_df[self.columns]
+
+            return res_df
+
+        return _pd.DataFrame(list(query_data))
+
+    def example(self, n=20):
 
         def get_sampledata(name):
             data = list(self._collection.find(
@@ -70,11 +102,20 @@ class DataFrame():
 
             return data
 
-        return _pd.DataFrame({
+        res = {
             c: get_sampledata(c) for c in self.columns
-        })
+        }
+        out = _pd.DataFrame(res)
+        if self._array_expand:
+            for c in out.columns:
+                if any([isinstance(d, list) for d in out[c].values]):
+                    self.list_columns.add(c)
+                    out[c] = out[c].map(
+                        lambda x: x[0] if isinstance(x, list) else x)
+
+        return out
 
     @property
     def dtypes(self):
-        sample_df = self.example(10)
+        sample_df = self.example(20)
         return sample_df.dtypes

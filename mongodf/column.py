@@ -9,31 +9,35 @@ class Column():
         self._mf = dataframe
         self._name = name
 
-    def _encode_value(self, value):
+    def _query_value(self, qt, value):
+
         if isinstance(value, _np.datetime64):
-            return _pd.Timestamp(value).to_pydatetime()
-        return value
+            value = _pd.Timestamp(value).to_pydatetime()
+
+        if self._mf._array_expand and self._name in self._mf.list_columns:
+            return {"$elemMatch": {qt: value}}
+        return {qt: value}
 
     def isin(self, array):
-        return Filter(self._mf, {self._name: {"$in": array}})
+        return Filter(self._mf, {self._name: self._query_value("$in", array)}, lambda x: x[self._name].isin(array))
 
     def __eq__(self, value):
-        return Filter(self._mf, {self._name: {"$eq": self._encode_value(value)}})
+        return Filter(self._mf, {self._name: self._query_value("$eq", value)}, lambda x: x[self._name] == value)
 
     def __ne__(self, value):
-        return Filter(self._mf, {self._name: {"$ne": self._encode_value(value)}})
+        return Filter(self._mf, {self._name: self._query_value("$ne", value)}, lambda x: x[self._name] != value)
 
     def __ge__(self, value):
-        return Filter(self._mf, {self._name: {"$gte": self._encode_value(value)}})
+        return Filter(self._mf, {self._name: self._query_value("$gte", value)}, lambda x: x[self._name] >= value)
 
     def __gt__(self, value):
-        return Filter(self._mf, {self._name: {"$gt": self._encode_value(value)}})
+        return Filter(self._mf, {self._name: self._query_value("$gt", value)}, lambda x: x[self._name] > value)
 
     def __lt__(self, value):
-        return Filter(self._mf, {self._name: {"$lt": self._encode_value(value)}})
+        return Filter(self._mf, {self._name: self._query_value("$lt", value)}, lambda x: x[self._name] < value)
 
     def __le__(self, value):
-        return Filter(self._mf, {self._name: {"$lte": self._encode_value(value)}})
+        return Filter(self._mf, {self._name: self._query_value("$lte", value)}, lambda x: x[self._name] <= value)
 
     def unique(self):
 

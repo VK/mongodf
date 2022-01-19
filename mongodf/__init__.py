@@ -3,7 +3,10 @@ from .filter import Filter
 from .dataframe import DataFrame
 
 
-def from_mongo(mongo, database, collection, columns=None, filter={}):
+def from_mongo(mongo, database, collection,
+               columns=None,
+               filter={},
+               array_expand=True):
 
     _db = mongo.get_database(database)
     _coll = _db.get_collection(collection)
@@ -26,7 +29,10 @@ def from_mongo(mongo, database, collection, columns=None, filter={}):
     else:
         _columns = columns
 
-    mf = DataFrame(mongo, _db, _coll, _columns)
+    mf = DataFrame(mongo, _db, _coll, _columns,
+                   filter=filter,
+                   array_expand=array_expand)
+
     mf._filter = Filter(mf, filter)
     return mf
 
