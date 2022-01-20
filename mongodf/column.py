@@ -69,13 +69,17 @@ class Column():
 
         res = list(res)[0]
 
+        if res["median"] is None and "min" in res and res["min"] is not None:
+            res["median"] = res["min"]
+        if res["median"] is None and "max" in res and res["max"] is not None:
+            res["median"] = res["max"]
+
         def flatten(t, el):
             if isinstance(el, list):
                 a = _np.array(el)
-                a = a[_np.isfinite(a)]
+                a = a[_pd.notnull(a)]
                 return getattr(_np, t)(a)
             return el
-
 
         res = {k: flatten(k, v) for k, v in res.items() if k != "_id"}
 
