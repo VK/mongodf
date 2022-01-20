@@ -68,6 +68,6 @@ class Column():
         ])
 
         res = list(res)[0]
-        res = {k: v for k, v in res.items() if k != "_id"}
+        res = {k: getattr(_np, k)(v) for k, v in res.items() if k != "_id"}
 
         return _pd.Series(res, name=self._name)
