@@ -68,6 +68,15 @@ class Column():
         ])
 
         res = list(res)[0]
-        res = {k: getattr(_np, k)(v) for k, v in res.items() if k != "_id"}
+
+        def flatten(t, el):
+            if isinstance(el, list):
+                a = _np.array(el)
+                a = a[_np.isfinite(a)]
+                return getattr(_np, t)(a)
+            return el
+
+
+        res = {k: flatten(k, v) for k, v in res.items() if k != "_id"}
 
         return _pd.Series(res, name=self._name)
