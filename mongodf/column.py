@@ -2,6 +2,7 @@ from .filter import Filter
 import numpy as _np
 import pandas as _pd
 import datetime
+from pymongo import MongoClient
 
 
 class Column():
@@ -41,12 +42,15 @@ class Column():
 
     def unique(self):
 
-        return _np.array(
-            self._mf._collection.distinct(
-                self._name,
-                self._mf._filter.config
+        with MongoClient(self._mf._host) as client:
+            db = client.get_database(self._mf._database)
+            coll = db.get_collection(self._mf._collection)
+            return _np.array(
+                coll.distinct(
+                    self._name,
+                    self._mf._filter.config
+                )
             )
-        )
 
     def agg(self, types):
         if isinstance(types, str):
@@ -59,15 +63,20 @@ class Column():
             "max": "$max",
         }
 
-        res = self._mf._collection.aggregate([
-            {"$match": self._mf._filter.config},
-            {"$group": {
-                "_id": None,
-                **{t: {pmap[t]: f"${self._name}"} for t in types}
-            }}
-        ])
+        with MongoClient(self._mf._host) as client:
+            db = client.get_database(self._mf._database)
+            coll = db.get_collection(self._mf._collection)
 
-        res = list(res)[0]
+
+            res = coll.aggregate([
+                {"$match": self._mf._filter.config},
+                {"$group": {
+                    "_id": None,
+                    **{t: {pmap[t]: f"${self._name}"} for t in types}
+                }}
+            ])
+
+            res = list(res)[0]
 
         if res["median"] is None and "min" in res and res["min"] is not None:
             res["median"] = res["min"]

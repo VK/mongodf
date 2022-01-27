@@ -1,17 +1,20 @@
 from .column import Column
 from .filter import Filter
 from .dataframe import DataFrame
+from pymongo import MongoClient
 
 
-def from_mongo(mongo, database, collection,
+def from_mongo(host, database, collection,
                columns=None,
                filter={},
                array_expand=True):
 
-    _db = mongo.get_database(database)
-    _coll = _db.get_collection(collection)
 
     if columns is None:
+        _client = MongoClient(host)
+        _db = _client.get_database(database)
+        _coll = _db.get_collection(collection)
+
         # compute the colums of the data
         _columns = list(_coll.aggregate([
             {"$project": {
@@ -29,7 +32,7 @@ def from_mongo(mongo, database, collection,
     else:
         _columns = columns
 
-    mf = DataFrame(mongo, _db, _coll, _columns,
+    mf = DataFrame(host, database, collection, _columns,
                    filter=filter,
                    array_expand=array_expand)
 

@@ -4,14 +4,15 @@ from .exception import MongoDfException
 import pandas as _pd
 import numpy as _np
 from itertools import cycle, islice
-
+from pymongo import MongoClient
 
 
 class DataFrame():
 
-    def __init__(self, _mongo, _database, _collection, _columns,
+    def __init__(self, _host, _database, _collection, _columns,
                  list_columns=[], filter=None, array_expand=True):
-        self._mongo = _mongo
+
+        self._host = _host
         self._database = _database
         self._collection = _collection
         self.columns = _columns
@@ -27,7 +28,7 @@ class DataFrame():
     def __getitem__(self, key):
         if isinstance(key, Filter):
             return DataFrame(
-                self._mongo,
+                self._host,
                 self._database,
                 self._collection,
                 self.columns,
@@ -41,7 +42,7 @@ class DataFrame():
                 raise MongoDfException("Not all columns available")
 
             return DataFrame(
-                self._mongo,
+                self._host,
                 self._database,
                 self._collection,
                 key,
@@ -66,60 +67,70 @@ class DataFrame():
         colfilter.update(
             {c: 1 for c in list(set([*self.columns, *self._filter.config.keys()]))})
 
-        query_data = self._collection.find(
-            self._filter.config,
-            colfilter
-        )
+        with MongoClient(self._host) as client:
 
-        if self._array_expand:
+            db = client.get_database(self._database)
+            coll = db.get_collection(self._collection)
 
-            def create_df(d):
-                try:
-                    return _pd.DataFrame(d)
-                except:
-                    return _pd.DataFrame(d, index=[0])
+            query_data = coll.find(
+                self._filter.config,
+                colfilter
+            )
 
-            res_df = _pd.concat([
-                create_df(d) for d in query_data
-            ])
+            if self._array_expand:
 
-            if len(self._filter.config) != 0:
-                res_df = res_df[self._filter.func(res_df)]
+                def create_df(d):
+                    try:
+                        return _pd.DataFrame(d)
+                    except:
+                        return _pd.DataFrame(d, index=[0])
 
+                res_df = _pd.concat([
+                    create_df(d) for d in query_data
+                ])
 
-            res_df = res_df[ [c for c in self.columns if c in res_df.columns]]
+                if len(self._filter.config) != 0:
+                    res_df = res_df[self._filter.func(res_df)]
 
-            for c in [cc for cc in self.columns if cc not in res_df.columns]:
-                res_df[c] = _np.nan
+                res_df = res_df[[
+                    c for c in self.columns if c in res_df.columns]]
 
-            return res_df
+                for c in [cc for cc in self.columns if cc not in res_df.columns]:
+                    res_df[c] = _np.nan
 
-        return _pd.DataFrame(list(query_data))
+                return res_df
+
+            return _pd.DataFrame(list(query_data))
 
     def example(self, n=20):
 
-        def get_sampledata(name):
-            data = list(self._collection.find(
-                {name: {"$exists": True}}, {name: 1, "_id": 0})[:n])
-            data = [d[name] for d in data]
+        with MongoClient(self._host) as client:
 
-            if len(data) < n:
-                data = list(islice(cycle(data), n))
+            db = client.get_database(self._database)
+            coll = db.get_collection(self._collection)
 
-            return data
+            def get_sampledata(name):
+                data = list(coll.find(
+                    {name: {"$exists": True}}, {name: 1, "_id": 0})[:n])
+                data = [d[name] for d in data]
 
-        res = {
-            c: get_sampledata(c) for c in self.columns
-        }
-        out = _pd.DataFrame(res)
-        if self._array_expand:
-            for c in out.columns:
-                if any([isinstance(d, list) for d in out[c].values]):
-                    self.list_columns.add(c)
-                    out[c] = out[c].map(
-                        lambda x: x[0] if isinstance(x, list) else x)
+                if len(data) < n:
+                    data = list(islice(cycle(data), n))
 
-        return out
+                return data
+
+            res = {
+                c: get_sampledata(c) for c in self.columns
+            }
+            out = _pd.DataFrame(res)
+            if self._array_expand:
+                for c in out.columns:
+                    if any([isinstance(d, list) for d in out[c].values]):
+                        self.list_columns.add(c)
+                        out[c] = out[c].map(
+                            lambda x: x[0] if isinstance(x, list) else x)
+
+            return out
 
     @property
     def dtypes(self):
