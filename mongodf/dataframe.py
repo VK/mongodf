@@ -136,3 +136,58 @@ class DataFrame():
     def dtypes(self):
         sample_df = self.example(20)
         return sample_df.dtypes
+
+    def __get_mety_entry(self, key, val):
+        from numpy import dtype
+
+        try:
+            if isinstance(val, _pd.CategoricalDtype):
+                return {
+                    "type": "categorical",
+                    "cat": val.categories.tolist()
+                }
+            elif val == dtype('O'):
+                return {
+                    "type": "categorical",
+                    "cat": self[key].unique().tolist()
+                }
+            elif val == dtype('bool'):
+                return {
+                    "type": "bool"
+                }
+            elif "time" in str(val):
+                return {"type": "temporal", **self[key].agg(["median", "min", "max"]).T.to_dict()}
+            else:
+                return {"type": "numerical", **self[key].agg(["median", "min", "max"]).T.to_dict()}
+        except:
+            return {"error": True}
+
+
+    def update_meta_cache(self):
+
+        with MongoClient(self._host) as client:
+            db = client.get_database(self._database)
+            meta_coll = db.get_collection("__" + self._collection + "_meta")
+
+            meta_coll.drop()
+
+            meta_coll.insert_many([
+                    {
+                        "name": k, **self.__get_mety_entry(k, val)
+                    }for k, val in self.dtypes.to_dict().items()
+                ])
+
+    def get_meta(self):
+        with MongoClient(self._host) as client:
+            db = client.get_database(self._database)
+            meta_coll = db.get_collection("__" + self._collection + "_meta")
+
+            meta = {el["name"]: el for el in meta_coll.find({}, {"_id": 0})}
+
+            if len(meta) > 0:
+                return meta
+
+        return {
+            k: self.__get_mety_entry(k, val)
+            for k, val in self.dtypes.to_dict().items()
+        }
