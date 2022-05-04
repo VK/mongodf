@@ -95,8 +95,19 @@ class DataFrame():
                 res_df = res_df[[
                     c for c in self.columns if c in res_df.columns]]
 
-                for c in [cc for cc in self.columns if cc not in res_df.columns]:
-                    res_df[c] = _np.nan
+                res_df = res_df.copy()
+
+                missing_cols = [cc for cc in self.columns if cc not in res_df.columns]
+                res_df = _pd.concat(
+                    [
+                        res_df,
+                        _pd.DataFrame(
+                            [[_np.nan]*len(missing_cols)], 
+                            index=res_df.index, 
+                            columns=missing_cols
+                        )
+                    ], axis=1
+                )
 
                 return res_df
 
