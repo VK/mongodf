@@ -167,9 +167,9 @@ class DataFrame():
                     "type": "bool"
                 }
             elif "time" in str(val):
-                return {"type": "temporal", **self[key].agg(["median", "min", "max"]).T.to_dict()}
+                return {"type": "temporal", **self[key].dropna().agg(["median", "min", "max"]).T.to_dict()}
             else:
-                return {"type": "numerical", **self[key].agg(["median", "min", "max"]).T.to_dict()}
+                return {"type": "numerical", **self[key].dropna().agg(["median", "min", "max"]).T.to_dict()}
         except:
             return {"error": True}
 
