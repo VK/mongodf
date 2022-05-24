@@ -167,9 +167,11 @@ class DataFrame():
                     "type": "bool"
                 }
             elif "time" in str(val):
-                return {"type": "temporal", **self[key].dropna().agg(["median", "min", "max"]).T.to_dict()}
+                query_res = df[key]._mf[df[key] > -1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
+                return {"type": "temporal", **query_res}
             else:
-                return {"type": "numerical", **self[key].dropna().agg(["median", "min", "max"]).T.to_dict()}
+                query_res = df[key]._mf[df[key] > -1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
+                return {"type": "numerical", **query_res}
         except:
             return {"error": True}
 
