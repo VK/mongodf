@@ -148,7 +148,7 @@ class DataFrame():
         sample_df = self.example(20)
         return sample_df.dtypes
 
-    def __get_mety_entry(self, key, val):
+    def __get_meta_entry(self, key, val):
         from numpy import dtype
 
         try:
@@ -167,7 +167,7 @@ class DataFrame():
                     "type": "bool"
                 }
             elif "time" in str(val):
-                query_res = self[self[key] > -1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
+                query_res = self[key].agg(["median", "min", "max"]).T.to_dict()
                 return {"type": "temporal", **query_res}
             else:
                 query_res = self[self[key] > -1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
@@ -186,7 +186,7 @@ class DataFrame():
 
             meta_coll.insert_many([
                     {
-                        "name": k, **self.__get_mety_entry(k, val)
+                        "name": k, **self.__get_meta_entry(k, val)
                     }for k, val in self.dtypes.to_dict().items()
                 ])
 
@@ -201,6 +201,6 @@ class DataFrame():
                 return meta
 
         return {
-            k: self.__get_mety_entry(k, val)
+            k: self.__get_meta_entry(k, val)
             for k, val in self.dtypes.to_dict().items()
         }
