@@ -25,6 +25,9 @@ class DataFrame():
         else:
             self.list_columns = set([])
 
+        # flag to determine when a categorical column is large
+        self.large_threshold  = 1000
+
     def __getitem__(self, key):
         if isinstance(key, Filter):
             return DataFrame(
@@ -153,14 +156,26 @@ class DataFrame():
 
         try:
             if isinstance(val, _pd.CategoricalDtype):
+                if len(val.categories) > self.large_threshold:
+                    return {
+                        "type": "categorical",
+                        "large": True
+                    }                            
                 return {
                     "type": "categorical",
                     "cat": val.categories.tolist()
                 }
             elif val == dtype('O'):
+                cat = self[key].unique()
+
+                if len(cat) > self.large_threshold:
+                    return {
+                        "type": "categorical",
+                        "large": True
+                    }                    
                 return {
                     "type": "categorical",
-                    "cat": self[key].unique().tolist()
+                    "cat": cat.tolist()
                 }
             elif val == dtype('bool'):
                 return {
