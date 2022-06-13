@@ -26,7 +26,7 @@ class DataFrame():
             self.list_columns = set([])
 
         # flag to determine when a categorical column is large
-        self.large_threshold  = 1000
+        self.large_threshold = 1000
 
     def __getitem__(self, key):
         if isinstance(key, Filter):
@@ -100,13 +100,14 @@ class DataFrame():
 
                 res_df = res_df.copy()
 
-                missing_cols = [cc for cc in self.columns if cc not in res_df.columns]
+                missing_cols = [
+                    cc for cc in self.columns if cc not in res_df.columns]
                 res_df = _pd.concat(
                     [
                         res_df,
                         _pd.DataFrame(
-                            [[_np.nan]*len(missing_cols)], 
-                            index=res_df.index, 
+                            [[_np.nan]*len(missing_cols)],
+                            index=res_df.index,
                             columns=missing_cols
                         )
                     ], axis=1
@@ -159,8 +160,9 @@ class DataFrame():
                 if len(val.categories) > self.large_threshold:
                     return {
                         "type": "categorical",
-                        "large": True
-                    }                            
+                        "large": True,
+                        "cat": []
+                    }
                 return {
                     "type": "categorical",
                     "cat": val.categories.tolist()
@@ -171,8 +173,9 @@ class DataFrame():
                 if len(cat) > self.large_threshold:
                     return {
                         "type": "categorical",
-                        "large": True
-                    }                    
+                        "large": True,
+                        "cat": []
+                    }
                 return {
                     "type": "categorical",
                     "cat": cat.tolist()
@@ -185,11 +188,11 @@ class DataFrame():
                 query_res = self[key].agg(["median", "min", "max"]).T.to_dict()
                 return {"type": "temporal", **query_res}
             else:
-                query_res = self[self[key] > -1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
+                query_res = self[self[key] > -
+                                 1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
                 return {"type": "numerical", **query_res}
         except:
             return {"error": True}
-
 
     def update_meta_cache(self):
 
@@ -200,10 +203,10 @@ class DataFrame():
             meta_coll.drop()
 
             meta_coll.insert_many([
-                    {
-                        "name": k, **self.__get_meta_entry(k, val)
-                    }for k, val in self.dtypes.to_dict().items()
-                ])
+                {
+                    "name": k, **self.__get_meta_entry(k, val)
+                }for k, val in self.dtypes.to_dict().items()
+            ])
 
     def get_meta(self):
         with MongoClient(self._host) as client:
