@@ -155,6 +155,19 @@ class DataFrame():
     def __get_meta_entry(self, key, val):
         from numpy import dtype
 
+        def parse_object_cat(key):
+            cat = self[key].unique()
+
+            if len(cat) > self.large_threshold:
+                return {
+                    "type": "categorical",
+                    "large": True,
+                    "cat": []
+                }
+            return {
+                "type": "categorical",
+                "cat": cat.tolist()
+            }
         try:
             if isinstance(val, _pd.CategoricalDtype):
                 if len(val.categories) > self.large_threshold:
@@ -167,19 +180,10 @@ class DataFrame():
                     "type": "categorical",
                     "cat": val.categories.tolist()
                 }
-            elif val == dtype('O'):
-                cat = self[key].unique()
 
-                if len(cat) > self.large_threshold:
-                    return {
-                        "type": "categorical",
-                        "large": True,
-                        "cat": []
-                    }
-                return {
-                    "type": "categorical",
-                    "cat": cat.tolist()
-                }
+            elif val == dtype('O'):
+                return parse_object_cat(key)
+
             elif val == dtype('bool'):
                 return {
                     "type": "bool"
@@ -188,9 +192,12 @@ class DataFrame():
                 query_res = self[key].agg(["median", "min", "max"]).T.to_dict()
                 return {"type": "temporal", **query_res}
             else:
-                query_res = self[self[key] > -
-                                 1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
-                return {"type": "numerical", **query_res}
+                try:
+                    query_res = self[self[key] > -
+                                     1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
+                    return {"type": "numerical", **query_res}
+                except:
+                    return parse_object_cat(key)
         except:
             return {"error": True}
 
