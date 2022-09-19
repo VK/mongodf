@@ -88,9 +88,12 @@ class DataFrame():
                     except:
                         return _pd.DataFrame(d, index=[0])
 
-                res_df = _pd.concat([
-                    create_df(d) for d in query_data
-                ])
+                try:
+                    res_df = _pd.concat([
+                        create_df(d) for d in query_data
+                    ])
+                except ValueError:
+                    res_df = _pd.DataFrame()
 
                 if len(self._filter.config) != 0:
                     res_df = res_df[self._filter.func(res_df)]
