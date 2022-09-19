@@ -45,7 +45,7 @@ class Column():
 
     def __le__(self, value):
         return Filter(self._mf, {self._name: self._query_value("$lte", value)},
-         lambda x: x[self._name] <= valu  if self._name in x.columns else Truee)
+         lambda x: x[self._name] <= value  if self._name in x.columns else True)
 
     def unique(self):
 
