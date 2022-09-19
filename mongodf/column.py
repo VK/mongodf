@@ -20,25 +20,32 @@ class Column():
         return {qt: value}
 
     def isin(self, array):
-        return Filter(self._mf, {self._name: self._query_value("$in", array)}, lambda x: x[self._name].isin(array))
+        return Filter(self._mf, {self._name: self._query_value("$in", array)},
+         lambda x: x[self._name].isin(array)  if self._name in x.columns else True)
 
     def __eq__(self, value):
-        return Filter(self._mf, {self._name: self._query_value("$eq", value)}, lambda x: x[self._name] == value)
+        return Filter(self._mf, {self._name: self._query_value("$eq", value)},
+         lambda x: x[self._name] == value if self._name in x.columns else True)
 
     def __ne__(self, value):
-        return Filter(self._mf, {self._name: self._query_value("$ne", value)}, lambda x: x[self._name] != value)
+        return Filter(self._mf, {self._name: self._query_value("$ne", value)},
+         lambda x: x[self._name] != value  if self._name in x.columns else True)
 
     def __ge__(self, value):
-        return Filter(self._mf, {self._name: self._query_value("$gte", value)}, lambda x: x[self._name] >= value)
+        return Filter(self._mf, {self._name: self._query_value("$gte", value)},
+         lambda x: x[self._name] >= value  if self._name in x.columns else True)
 
     def __gt__(self, value):
-        return Filter(self._mf, {self._name: self._query_value("$gt", value)}, lambda x: x[self._name] > value)
+        return Filter(self._mf, {self._name: self._query_value("$gt", value)},
+         lambda x: x[self._name] > value  if self._name in x.columns else True)
 
     def __lt__(self, value):
-        return Filter(self._mf, {self._name: self._query_value("$lt", value)}, lambda x: x[self._name] < value)
+        return Filter(self._mf, {self._name: self._query_value("$lt", value)},
+         lambda x: x[self._name] < value  if self._name in x.columns else True)
 
     def __le__(self, value):
-        return Filter(self._mf, {self._name: self._query_value("$lte", value)}, lambda x: x[self._name] <= value)
+        return Filter(self._mf, {self._name: self._query_value("$lte", value)},
+         lambda x: x[self._name] <= valu  if self._name in x.columns else Truee)
 
     def unique(self):
 
