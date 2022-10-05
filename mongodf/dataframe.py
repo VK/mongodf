@@ -140,7 +140,10 @@ class DataFrame():
             def filter_to_single(data):
                 if isinstance(data, list):
                     sub = [v for v in data if v == v]
-                    return sub[0]
+                    if len(sub) > 0:
+                        return sub[0]
+                    else:
+                        return data[0]
                 else:
                     return data
 
