@@ -152,7 +152,7 @@ class DataFrame():
 
     @property
     def dtypes(self):
-        sample_df = self.example(20)
+        sample_df = self.example(20).fillna(axis=0, method="ffill").fillna(axis=0, method="bfill")
         return sample_df.dtypes
 
     def __get_meta_entry(self, key, val):
