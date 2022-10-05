@@ -137,6 +137,13 @@ class DataFrame():
 
                 return data
 
+            def filter_to_single(data):
+                if isinstance(data, list):
+                    sub = [v for v in data if v == v]
+                    return sub[0]
+                else:
+                    return data
+
             res = {
                 c: get_sampledata(c) for c in self.columns
             }
@@ -145,8 +152,7 @@ class DataFrame():
                 for c in out.columns:
                     if any([isinstance(d, list) for d in out[c].values]):
                         self.list_columns.add(c)
-                        out[c] = out[c].map(
-                            lambda x: x[0] if isinstance(x, list) else x)
+                        out[c] = out[c].map(filter_to_single)
 
             return out
 
