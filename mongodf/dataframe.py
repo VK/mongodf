@@ -117,8 +117,24 @@ class DataFrame():
                 )
 
                 return res_df
+            
+            res_df = _pd.DataFrame(list(query_data))
+            missing_cols = [cc for cc in self.columns if cc not in res_df.columns]
+            if len(missing_cols) == 0:
+                return res_df
+            
+            res_df = _pd.concat(
+                [
+                    res_df,
+                    _pd.DataFrame(
+                        [[_np.nan]*len(missing_cols)],
+                        index=res_df.index,
+                        columns=missing_cols
+                    )
+                ], axis=1
+            )       
 
-            return _pd.DataFrame(list(query_data))
+            return res_df     
 
     def example(self, n=20):
 
