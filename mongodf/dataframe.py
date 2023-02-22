@@ -288,6 +288,7 @@ class DataFrame():
             print("new cols", new_dtypes_dict)
             dtypes_dict.update(new_dtypes_dict)
 
+            older_than = None
             if self._update_col in self.columns:
                 older_than = old_data[self._update_col]["max"] if self._update_col in old_data else None
                 if older_than:
