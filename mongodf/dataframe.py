@@ -27,6 +27,7 @@ class DataFrame():
 
         # flag to determine when a categorical column is large
         self.large_threshold = 1000
+        self._update_col = "__UPDATED"
 
     def __getitem__(self, key):
         if isinstance(key, Filter):
@@ -180,11 +181,24 @@ class DataFrame():
         sample_df = self.example(20).fillna(axis=0, method="ffill").fillna(axis=0, method="bfill")
         return sample_df.dtypes
 
-    def __get_meta_entry(self, key, val):
+    def __get_meta_entry(self, key, val, older_than=None, old_values=None):
         from numpy import dtype
 
         def parse_object_cat(key):
-            cat = self[key].unique()
+
+            if old_values:
+                if "large" in old_values:
+                    return {
+                        "type": "categorical",
+                        "large": True,
+                        "cat": []
+                    }
+
+            if older_than and self._update_col in self.columns:
+                cat = self[self[self._update_col] > older_than][key].unique()
+                cat = list(set([*cat, *old_values["cat"]]))
+            else:
+                cat = self[key].unique()
 
             if len(cat) > self.large_threshold:
                 return {
@@ -194,8 +208,26 @@ class DataFrame():
                 }
             return {
                 "type": "categorical",
-                "cat": cat.tolist()
+                "cat": cat if isinstance(cat, list) else cat.tolist()
             }
+
+        def get_updated_agg_data(mdf, key):
+            if older_than and self._update_col in self.columns:
+                try:
+                    query_res = mdf[self[self._update_col] > older_than][key].agg(["median", "min", "max"]).T.to_dict()
+                except:
+                    print("exc ", key)
+                    query_res = {}
+                if "median" in query_res and query_res["median"]:
+                    query_res["min"] = min(old_values["min"], query_res["min"])
+                    query_res["max"] = max(old_values["max"], query_res["max"])
+                else:
+                    query_res={k: old_values[k] for k in ["median", "min", "max"]}
+            else:
+                query_res = mdf[key].agg(["median", "min", "max"]).T.to_dict() 
+
+            return query_res
+
         try:
             if isinstance(val, _pd.CategoricalDtype):
                 if len(val.categories) > self.large_threshold:
@@ -217,19 +249,85 @@ class DataFrame():
                     "type": "bool"
                 }
             elif "time" in str(val):
-                query_res = self[key].agg(["median", "min", "max"]).T.to_dict()
+                query_res = get_updated_agg_data(self, key)
+
                 return {"type": "temporal", **query_res}
             else:
                 try:
-                    query_res = self[self[key] > -
-                                     1.0e99][key].agg(["median", "min", "max"]).T.to_dict()
+                    query_res = get_updated_agg_data(self[self[key] > -1.0e99], key)
+
                     return {"type": "numerical", **query_res}
                 except:
+                    print(ex)
                     return parse_object_cat(key)
         except:
             return {"error": True}
 
+
     def update_meta_cache(self):
+        from numpy import dtype
+
+        with MongoClient(self._host) as client:
+            db = client.get_database(self._database)
+            meta_coll = db.get_collection("__" + self._collection + "_meta")
+
+            # get the old metadata
+            old_data = list(meta_coll.find({}))
+            old_data = {el["name"]: el for el in old_data}    
+
+            # use the old metadata to reconstruct self.dtypes.to_dict()
+            dtypes_dict = {k: {
+                "numerical": dtype('float64'),
+                "bool": dtype('bool'),
+                "categorical": dtype('O'),
+                "temporal": dtype('<M8[ns]'),
+            }[v['type']]for k,v in old_data.items()}
+
+            # if there are some missing cols use the old version to 
+            new_dtypes_dict = self.__getitem__([c for c in self.columns if c not in dtypes_dict]).dtypes.to_dict()
+            print("new cols", new_dtypes_dict)
+            dtypes_dict.update(new_dtypes_dict)
+
+            if self._update_col in self.columns:
+                older_than = old_data[self._update_col]["max"] if self._update_col in old_data else None
+                if older_than:
+                    print("last_updated", older_than)
+                    try:
+                        new_entries = self[self[self._update_col] > older_than][[self._update_col]].compute()
+                    except:
+                        new_entries = []
+                    if len(new_entries) == 0:
+                        print("no new documents --> no update needed")
+                        return
+                    print("number new documents", len(new_entries))
+
+            # update the metadata collection
+            for k, val in dtypes_dict.items():
+
+                if k not in self.columns:
+                    meta_coll.delete_one({"name": k})
+
+                if k in self.columns and k in old_data:
+                      if "large" in old_data[k]:
+                            continue
+
+                if k in old_data:
+                    new_entry = {
+                         "name": k, **self.__get_meta_entry(k, val, older_than, old_data[k])
+                    }
+                else:
+                    new_entry = {
+                         "name": k, **self.__get_meta_entry(k, val)
+                    }
+
+                meta_coll.find_one_and_update(
+                    {"name": k},
+                    {"$set": new_entry},
+                    upsert=True
+                )
+
+
+    def update_meta_cache_all(self):
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)

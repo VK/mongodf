@@ -83,7 +83,11 @@ class Column():
                 }}
             ])
 
-            res = list(res)[0]
+            res = list(res)
+            if len(res) > 0:           
+                res = res[0]
+            else:
+                res = {"mean": None, "median": None, "min": None, "max": None}
 
         if res["median"] is None and "min" in res and res["min"] is not None:
             res["median"] = res["min"]
