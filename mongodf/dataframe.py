@@ -311,7 +311,7 @@ class DataFrame():
                       if "large" in old_data[k]:
                             continue
 
-                if k in old_data:
+                if k in old_data and older_than:
                     new_entry = {
                          "name": k, **self.__get_meta_entry(k, val, older_than, old_data[k])
                     }
