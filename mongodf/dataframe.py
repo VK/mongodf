@@ -149,8 +149,11 @@ class DataFrame():
                     {name: {"$exists": True}}, {name: 1, "_id": 0})[:n])
                 data = [d[name] for d in data]
 
-                if len(data) < n:
+                if len(data) < n and len(data) > 0:
                     data = list(islice(cycle(data), n))
+
+                if len(data) == 0:
+                    data = [_np.nan]*n
 
                 return data
 
