@@ -1,6 +1,23 @@
+# Copyright 2024 Viktor Krückl. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
+
 from .filter import Filter
 from .column import Column
 from .exception import MongoDfException
+from .utils import flatten_dict
 import pandas as _pd
 import numpy as _np
 from itertools import cycle, islice
@@ -8,9 +25,51 @@ from pymongo import MongoClient
 
 
 class DataFrame():
+    """
+    A class to represent a DataFrame for MongoDB collections with extended functionality for querying and metadata management.
+
+    Parameters:
+    -----------
+    _host : str
+        The MongoDB host.
+    _database : str
+        The name of the database.
+    _collection : str
+        The name of the collection.
+    _columns : list
+        The list of columns to include in the DataFrame.
+    list_columns : list or set, optional
+        A list or set of columns that are considered to be lists and need special handling. Default is an empty list.
+    filter : Filter, optional
+        A Filter object representing the query filter. Default is None.
+    array_expand : bool, optional
+        Whether to expand arrays into separate rows. Default is True.
+    
+    Attributes:
+    -----------
+    _host : str
+        The MongoDB host.
+    _database : str
+        The name of the database.
+    _collection : str
+        The name of the collection.
+    columns : list
+        The list of columns included in the DataFrame.
+    _filter : Filter
+        The query filter for the DataFrame.
+    _array_expand : bool
+        Whether to expand arrays into separate rows.
+    list_columns : set
+        A set of columns that are considered to be lists and need special handling.
+    large_threshold : int
+        A threshold for determining when a categorical column is large. Default is 1000.
+    _update_col : str
+        The name of the column used for tracking updates. Default is "__UPDATED".
+    """    
 
     def __init__(self, _host, _database, _collection, _columns,
-                 list_columns=[], filter=None, array_expand=True):
+                 list_columns=[], filter=None, array_expand=True
+                 ):
 
         self._host = _host
         self._database = _database
@@ -30,6 +89,26 @@ class DataFrame():
         self._update_col = "__UPDATED"
 
     def __getitem__(self, key):
+        """
+        Retrieve a subset of the DataFrame based on the key.
+
+        Parameters:
+        -----------
+        key : str, list, or Filter
+            If a string, retrieves the column with that name.
+            If a list, retrieves a DataFrame with only the specified columns.
+            If a Filter, retrieves a DataFrame filtered by the specified filter.
+
+        Returns:
+        --------
+        DataFrame or Column
+            A new DataFrame or Column based on the key.
+
+        Raises:
+        -------
+        MongoDfException
+            If the specified columns are not available.
+        """        
         if isinstance(key, Filter):
             return DataFrame(
                 self._host,
@@ -60,13 +139,61 @@ class DataFrame():
         else:
             raise MongoDfException(f"column {key} not found!")
 
+    @property
+    def dtypes(self):
+        """
+        Get the data types of the columns in the DataFrame.
+
+        Returns:
+        --------
+        pandas.Series
+            A Series with the data types of the columns.
+        """        
+        sample_df = self.example(20).ffill(axis=0).bfill(axis=0)
+        return sample_df.dtypes
+
     def __getattr__(self, key):
+        """
+        Get a column by name as an attribute.
+
+        Parameters:
+        -----------
+        key : str
+            The name of the column.
+
+        Returns:
+        --------
+        Column
+            The Column object for the specified column.
+
+        Raises:
+        -------
+        MongoDfException
+            If the column is not found.
+        """        
+        if key == "dtypes":
+            sample_df = self.example(20).ffill(axis=0).bfill(axis=0)
+            return sample_df.dtypes            
+            
         if key in self.columns:
             return Column(self, key)
         else:
             raise MongoDfException(f"column {key} not found!")
 
     def compute(self, **kwargs):
+        """
+        Compute the DataFrame by querying the MongoDB collection.
+
+        Parameters:
+        -----------
+        kwargs : dict
+            Additional parameters for the computation.
+
+        Returns:
+        --------
+        pandas.DataFrame
+            The resulting DataFrame after querying the MongoDB collection.
+        """        
         colfilter = {"_id": 0}
         colfilter.update(
             {c: 1 for c in list(set([*self.columns, *self._filter.config.keys()]))})
@@ -85,9 +212,9 @@ class DataFrame():
 
                 def create_df(d):
                     try:
-                        return _pd.DataFrame(d)
+                        return _pd.DataFrame(flatten_dict(d))
                     except:
-                        return _pd.DataFrame(d, index=[0])
+                        return _pd.DataFrame(flatten_dict(d), index=[0])
 
                 try:
                     res_df = _pd.concat([
@@ -136,8 +263,24 @@ class DataFrame():
             )       
 
             return res_df     
+        
+
+    
 
     def example(self, n=20):
+        """
+        Retrieve an example of the DataFrame with a specified number of rows.
+
+        Parameters:
+        -----------
+        n : int, optional
+            The number of rows to retrieve. Default is 20.
+
+        Returns:
+        --------
+        pandas.DataFrame
+            A DataFrame with example data.
+        """        
 
         with MongoClient(self._host) as client:
 
@@ -145,12 +288,17 @@ class DataFrame():
             coll = db.get_collection(self._collection)
 
             def get_sampledata(name):
-                data = list(coll.find(
-                    {name: {"$exists": True}}, {name: 1, "_id": 0})[:n])
-                data = [d[name] for d in data]
+                try:
+                    data = list(coll.find({name: {"$exists": True}}, {name: 1, "_id": 0}).limit(n))
+                    
+                    data = flatten_dict(data)
+                    data = [d[name] for d in data]
 
-                if len(data) < n and len(data) > 0:
-                    data = list(islice(cycle(data), n))
+                    if len(data) < n and len(data) > 0:
+                        data = list(islice(cycle(data), n))
+                except:
+                    print("error example", name)
+                    data = []
 
                 if len(data) == 0:
                     data = [_np.nan]*n
@@ -179,12 +327,28 @@ class DataFrame():
 
             return out
 
-    @property
-    def dtypes(self):
-        sample_df = self.example(20).fillna(axis=0, method="ffill").fillna(axis=0, method="bfill")
-        return sample_df.dtypes
+
 
     def __get_meta_entry(self, key, val, older_than=None, old_values=None):
+        """
+        Get metadata entry for a specific column.
+
+        Parameters:
+        -----------
+        key : str
+            The column name.
+        val : dtype
+            The data type of the column.
+        older_than : datetime, optional
+            A timestamp to filter for updated values. Default is None.
+        old_values : dict, optional
+            Previous metadata values. Default is None.
+
+        Returns:
+        --------
+        dict
+            The metadata entry for the column.
+        """        
         from numpy import dtype
 
         def parse_object_cat(key):
@@ -261,13 +425,15 @@ class DataFrame():
 
                     return {"type": "numerical", **query_res}
                 except:
-                    print(ex)
                     return parse_object_cat(key)
         except:
             return {"error": True}
 
 
     def update_meta_cache(self):
+        """
+        Update the metadata cache for the DataFrame.
+        """
         from numpy import dtype
 
         with MongoClient(self._host) as client:
@@ -276,7 +442,7 @@ class DataFrame():
 
             # get the old metadata
             old_data = list(meta_coll.find({}))
-            old_data = {el["name"]: el for el in old_data}    
+            old_data = {el["name"]: el for el in old_data}   
 
             # use the old metadata to reconstruct self.dtypes.to_dict()
             dtypes_dict = {k: {
@@ -284,12 +450,16 @@ class DataFrame():
                 "bool": dtype('bool'),
                 "categorical": dtype('O'),
                 "temporal": dtype('<M8[ns]'),
-            }[v['type']]for k,v in old_data.items()}
+            }[v['type']]for k,v in old_data.items() if "type" in v}
+
+            print(dtypes_dict)
 
             # if there are some missing cols use the old version to 
             new_dtypes_dict = self.__getitem__([c for c in self.columns if c not in dtypes_dict]).dtypes.to_dict()
             print("new cols", new_dtypes_dict)
             dtypes_dict.update(new_dtypes_dict)
+
+            dtypes_dict = {k: v for k, v in dtypes_dict.items() if k == k}
 
             older_than = None
             if self._update_col in self.columns:
@@ -332,6 +502,9 @@ class DataFrame():
 
 
     def update_meta_cache_all(self):
+        """
+        Update the entire metadata cache for the DataFrame.
+        """        
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
@@ -346,6 +519,14 @@ class DataFrame():
             ])
 
     def get_meta(self):
+        """
+        Get the metadata for the DataFrame.
+
+        Returns:
+        --------
+        dict
+            A dictionary with metadata for each column.
+        """        
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
             meta_coll = db.get_collection("__" + self._collection + "_meta")
