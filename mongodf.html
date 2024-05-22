@@ -22,7 +22,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Indices and tables" href="index.html" /> 
+    <link rel="prev" title="MongoDf" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -37,7 +37,7 @@
             MongoDf
           </a>
               <div class="version">
-                0.0.32
+                0.0.33
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -48,7 +48,31 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Mongo DF</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mongo DF</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mongodf.DataFrame"><code class="docutils literal notranslate"><span class="pre">DataFrame</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.DataFrame.compute"><code class="docutils literal notranslate"><span class="pre">DataFrame.compute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.DataFrame.dtypes"><code class="docutils literal notranslate"><span class="pre">DataFrame.dtypes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.DataFrame.example"><code class="docutils literal notranslate"><span class="pre">DataFrame.example()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.DataFrame.get_meta"><code class="docutils literal notranslate"><span class="pre">DataFrame.get_meta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.DataFrame.update_meta_cache"><code class="docutils literal notranslate"><span class="pre">DataFrame.update_meta_cache()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.DataFrame.update_meta_cache_all"><code class="docutils literal notranslate"><span class="pre">DataFrame.update_meta_cache_all()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mongodf.Filter"><code class="docutils literal notranslate"><span class="pre">Filter</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.Filter.inversion_map"><code class="docutils literal notranslate"><span class="pre">Filter.inversion_map</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mongodf.Column"><code class="docutils literal notranslate"><span class="pre">Column</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.Column.agg"><code class="docutils literal notranslate"><span class="pre">Column.agg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.Column.isin"><code class="docutils literal notranslate"><span class="pre">Column.isin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mongodf.Column.unique"><code class="docutils literal notranslate"><span class="pre">Column.unique()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mongodf.utils.flatten_dict"><code class="docutils literal notranslate"><span class="pre">flatten_dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mongodf.utils.from_mongo"><code class="docutils literal notranslate"><span class="pre">from_mongo()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mongodf.utils.get_all_columns_of"><code class="docutils literal notranslate"><span class="pre">get_all_columns_of()</span></code></a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,13 +101,368 @@
              
   <section id="mongo-df">
 <h1>Mongo DF<a class="headerlink" href="#mongo-df" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mongodf.DataFrame">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mongodf.</span></span><span class="sig-name descname"><span class="pre">DataFrame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_collection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_expand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/dataframe.html#DataFrame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.DataFrame" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class to represent a DataFrame for MongoDB collections with extended functionality for querying and metadata management.</p>
+<section id="parameters">
+<h2>Parameters:<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>_host<span class="classifier">str</span></dt><dd><p>The MongoDB host.</p>
+</dd>
+<dt>_database<span class="classifier">str</span></dt><dd><p>The name of the database.</p>
+</dd>
+<dt>_collection<span class="classifier">str</span></dt><dd><p>The name of the collection.</p>
+</dd>
+<dt>_columns<span class="classifier">list</span></dt><dd><p>The list of columns to include in the DataFrame.</p>
+</dd>
+<dt>list_columns<span class="classifier">list or set, optional</span></dt><dd><p>A list or set of columns that are considered to be lists and need special handling. Default is an empty list.</p>
+</dd>
+<dt>filter<span class="classifier">Filter, optional</span></dt><dd><p>A Filter object representing the query filter. Default is None.</p>
+</dd>
+<dt>array_expand<span class="classifier">bool, optional</span></dt><dd><p>Whether to expand arrays into separate rows. Default is True.</p>
+</dd>
+</dl>
+</section>
+<section id="attributes">
+<h2>Attributes:<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>_host<span class="classifier">str</span></dt><dd><p>The MongoDB host.</p>
+</dd>
+<dt>_database<span class="classifier">str</span></dt><dd><p>The name of the database.</p>
+</dd>
+<dt>_collection<span class="classifier">str</span></dt><dd><p>The name of the collection.</p>
+</dd>
+<dt>columns<span class="classifier">list</span></dt><dd><p>The list of columns included in the DataFrame.</p>
+</dd>
+<dt>_filter<span class="classifier">Filter</span></dt><dd><p>The query filter for the DataFrame.</p>
+</dd>
+<dt>_array_expand<span class="classifier">bool</span></dt><dd><p>Whether to expand arrays into separate rows.</p>
+</dd>
+<dt>list_columns<span class="classifier">set</span></dt><dd><p>A set of columns that are considered to be lists and need special handling.</p>
+</dd>
+<dt>large_threshold<span class="classifier">int</span></dt><dd><p>A threshold for determining when a categorical column is large. Default is 1000.</p>
+</dd>
+<dt>_update_col<span class="classifier">str</span></dt><dd><p>The name of the column used for tracking updates. Default is “__UPDATED”.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.DataFrame.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/dataframe.html#DataFrame.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.DataFrame.compute" title="Link to this definition"></a></dt>
+<dd><p>Compute the DataFrame by querying the MongoDB collection.</p>
+<section id="id1">
+<h3>Parameters:<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>kwargs<span class="classifier">dict</span></dt><dd><p>Additional parameters for the computation.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h3>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>pandas.DataFrame</dt><dd><p>The resulting DataFrame after querying the MongoDB collection.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mongodf.DataFrame.dtypes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtypes</span></span><a class="headerlink" href="#mongodf.DataFrame.dtypes" title="Link to this definition"></a></dt>
+<dd><p>Get the data types of the columns in the DataFrame.</p>
+<section id="id2">
+<h3>Returns:<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>pandas.Series</dt><dd><p>A Series with the data types of the columns.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.DataFrame.example">
+<span class="sig-name descname"><span class="pre">example</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/dataframe.html#DataFrame.example"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.DataFrame.example" title="Link to this definition"></a></dt>
+<dd><p>Retrieve an example of the DataFrame with a specified number of rows.</p>
+<section id="id3">
+<h3>Parameters:<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>n<span class="classifier">int, optional</span></dt><dd><p>The number of rows to retrieve. Default is 20.</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h3>Returns:<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>pandas.DataFrame</dt><dd><p>A DataFrame with example data.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.DataFrame.get_meta">
+<span class="sig-name descname"><span class="pre">get_meta</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/dataframe.html#DataFrame.get_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.DataFrame.get_meta" title="Link to this definition"></a></dt>
+<dd><p>Get the metadata for the DataFrame.</p>
+<section id="id5">
+<h3>Returns:<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>dict</dt><dd><p>A dictionary with metadata for each column.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.DataFrame.update_meta_cache">
+<span class="sig-name descname"><span class="pre">update_meta_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/dataframe.html#DataFrame.update_meta_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.DataFrame.update_meta_cache" title="Link to this definition"></a></dt>
+<dd><p>Update the metadata cache for the DataFrame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.DataFrame.update_meta_cache_all">
+<span class="sig-name descname"><span class="pre">update_meta_cache_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/dataframe.html#DataFrame.update_meta_cache_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.DataFrame.update_meta_cache_all" title="Link to this definition"></a></dt>
+<dd><p>Update the entire metadata cache for the DataFrame.</p>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mongodf.Filter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mongodf.</span></span><span class="sig-name descname"><span class="pre">Filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func=&lt;function</span> <span class="pre">Filter.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/filter.html#Filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.Filter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class to represent a filter for querying a DataFrame from a MongoDB collection.</p>
+<section id="id6">
+<h2>Parameters:<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>dataframe<span class="classifier">DataFrame</span></dt><dd><p>The DataFrame to which the filter is applied.</p>
+</dd>
+<dt>config<span class="classifier">dict</span></dt><dd><p>The configuration of the filter, represented as a MongoDB query.</p>
+</dd>
+<dt>func<span class="classifier">function, optional</span></dt><dd><p>A function to be applied to the filter results. Default is an identity function.</p>
+</dd>
+</dl>
+</section>
+<section id="methods">
+<h2>Methods:<a class="headerlink" href="#methods" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>__invert__():</dt><dd><p>Inverts the filter by swapping query operators with their opposites.</p>
+</dd>
+<dt>__and__(filter_b):</dt><dd><p>Combines two filters using a logical AND operation.</p>
+</dd>
+<dt>__or__(filter_b):</dt><dd><p>Combines two filters using a logical OR operation.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mongodf.Filter.inversion_map">
+<span class="sig-name descname"><span class="pre">inversion_map</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'$eq':</span> <span class="pre">'$ne',</span> <span class="pre">'$gt':</span> <span class="pre">'$lte',</span> <span class="pre">'$gte':</span> <span class="pre">'$lt',</span> <span class="pre">'$in':</span> <span class="pre">'$nin',</span> <span class="pre">'$lt':</span> <span class="pre">'$gte',</span> <span class="pre">'$lte':</span> <span class="pre">'$gt',</span> <span class="pre">'$ne':</span> <span class="pre">'$eq',</span> <span class="pre">'$nin':</span> <span class="pre">'$in'}</span></em><a class="headerlink" href="#mongodf.Filter.inversion_map" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mongodf.Column">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mongodf.</span></span><span class="sig-name descname"><span class="pre">Column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/column.html#Column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.Column" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class representing a column in a DataFrame-like object, enabling operations and filters on MongoDB collections.</p>
+<section id="id7">
+<h2>Parameters:<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>dataframe<span class="classifier">DataFrame</span></dt><dd><p>The DataFrame-like object this column belongs to.</p>
+</dd>
+<dt>name<span class="classifier">str</span></dt><dd><p>The name of the column.</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h2>Methods:<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>_query_value(qt, value):</dt><dd><p>Internal method to format a query value for MongoDB.</p>
+</dd>
+<dt>isin(array):</dt><dd><p>Returns a Filter object to check if column values are in the given array.</p>
+</dd>
+<dt>__eq__(value):</dt><dd><p>Returns a Filter object to check if column values are equal to the given value.</p>
+</dd>
+<dt>__ne__(value):</dt><dd><p>Returns a Filter object to check if column values are not equal to the given value.</p>
+</dd>
+<dt>__ge__(value):</dt><dd><p>Returns a Filter object to check if column values are greater than or equal to the given value.</p>
+</dd>
+<dt>__gt__(value):</dt><dd><p>Returns a Filter object to check if column values are greater than the given value.</p>
+</dd>
+<dt>__lt__(value):</dt><dd><p>Returns a Filter object to check if column values are less than the given value.</p>
+</dd>
+<dt>__le__(value):</dt><dd><p>Returns a Filter object to check if column values are less than or equal to the given value.</p>
+</dd>
+<dt>unique():</dt><dd><p>Returns an array of unique values in the column.</p>
+</dd>
+<dt>agg(types):</dt><dd><p>Returns a Pandas Series containing aggregate values (mean, median, min, max) for the column.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.Column.agg">
+<span class="sig-name descname"><span class="pre">agg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/column.html#Column.agg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.Column.agg" title="Link to this definition"></a></dt>
+<dd><p>Aggregate values in the column.</p>
+<section id="id9">
+<h3>Parameters:<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>types<span class="classifier">str or list</span></dt><dd><p>The types of aggregation to perform (‘mean’, ‘median’, ‘min’, ‘max’).</p>
+</dd>
+</dl>
+</section>
+<section id="id10">
+<h3>Returns:<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>pandas.Series</dt><dd><p>A Series containing the aggregated values for the column.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.Column.isin">
+<span class="sig-name descname"><span class="pre">isin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/column.html#Column.isin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.Column.isin" title="Link to this definition"></a></dt>
+<dd><p>Create a Filter object to check if column values are in the given array.</p>
+<section id="id11">
+<h3>Parameters:<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>array<span class="classifier">list</span></dt><dd><p>The array of values to check against.</p>
+</dd>
+</dl>
+</section>
+<section id="id12">
+<h3>Returns:<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>Filter</dt><dd><p>A Filter object with the specified condition.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mongodf.Column.unique">
+<span class="sig-name descname"><span class="pre">unique</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/column.html#Column.unique"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.Column.unique" title="Link to this definition"></a></dt>
+<dd><p>Get the unique values in the column.</p>
+<section id="id13">
+<h3>Returns:<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>numpy.ndarray</dt><dd><p>An array of unique values in the column.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py function" id="module-mongodf.utils">
+<dt class="sig sig-object py" id="mongodf.utils.flatten_dict">
+<span class="sig-prename descclassname"><span class="pre">mongodf.utils.</span></span><span class="sig-name descname"><span class="pre">flatten_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/utils.html#flatten_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.utils.flatten_dict" title="Link to this definition"></a></dt>
+<dd><p>Flatten a nested dictionary into dot notation.</p>
+<section id="id14">
+<h2>Parameters:<a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>d<span class="classifier">dict</span></dt><dd><p>The nested dictionary to flatten.</p>
+</dd>
+<dt>parent_key<span class="classifier">str, optional</span></dt><dd><p>The base key to use for the flattened dictionary. Default is an empty string.</p>
+</dd>
+<dt>sep<span class="classifier">str, optional</span></dt><dd><p>The separator to use between keys. Default is ‘.’.</p>
+</dd>
+</dl>
+</section>
+<section id="id15">
+<h2>Returns:<a class="headerlink" href="#id15" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>dict</dt><dd><p>A dictionary with flattened keys using dot notation.</p>
+</dd>
+</dl>
+</section>
+<section id="notes">
+<h2>Notes:<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<p>This function recursively flattens a nested dictionary. If a value in the dictionary is another dictionary, it will
+concatenate the keys using the specified separator. If a value is a list, it will recursively flatten each element 
+of the list.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mongodf.utils.from_mongo">
+<span class="sig-prename descclassname"><span class="pre">mongodf.utils.</span></span><span class="sig-name descname"><span class="pre">from_mongo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_expand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cached_meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_expand_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/utils.html#from_mongo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.utils.from_mongo" title="Link to this definition"></a></dt>
+<dd><p>Fetch data from a MongoDB collection and return it as a DataFrame-like object.</p>
+<section id="id16">
+<h2>Parameters:<a class="headerlink" href="#id16" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>host<span class="classifier">str</span></dt><dd><p>The MongoDB host address.</p>
+</dd>
+<dt>database<span class="classifier">str</span></dt><dd><p>The name of the MongoDB database.</p>
+</dd>
+<dt>collection<span class="classifier">str</span></dt><dd><p>The name of the MongoDB collection.</p>
+</dd>
+<dt>columns<span class="classifier">list, optional</span></dt><dd><p>A list of column names to include in the result. If None, columns will be inferred.</p>
+</dd>
+<dt>filter<span class="classifier">dict, optional</span></dt><dd><p>A <cite>mongodf.Filter</cite> class. If None, no filter will be applied</p>
+</dd>
+<dt>array_expand<span class="classifier">bool, optional</span></dt><dd><p>Whether to expand arrays found in the documents into separate rows. Default is True.</p>
+</dd>
+<dt>cached_meta<span class="classifier">bool, optional</span></dt><dd><p>Whether to use cached metadata for inferring columns. Default is True.</p>
+</dd>
+<dt>dict_expand_level<span class="classifier">int, optional</span></dt><dd><p>The level of dictionary expansion to perform. Default is 0.</p>
+</dd>
+<dt>meta_collection<span class="classifier">str, optional</span></dt><dd><p>The name of the collection to use for cached metadata. If None, defaults to ‘__&lt;collection&gt;_meta’.</p>
+</dd>
+</dl>
+</section>
+<section id="id17">
+<h2>Returns:<a class="headerlink" href="#id17" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>DataFrame</dt><dd><p>A DataFrame-like object containing the data from the MongoDB collection.</p>
+</dd>
+</dl>
+</section>
+<section id="id18">
+<h2>Notes:<a class="headerlink" href="#id18" title="Link to this heading"></a></h2>
+<p>If <cite>cached_meta</cite> is True and <cite>columns</cite> is None, the function will attempt to retrieve column names 
+from a meta collection (either specified by <cite>meta_collection</cite> or defaulting to ‘__&lt;collection&gt;_meta’). 
+If no columns are found in the meta collection, it will then infer the columns by analyzing the collection’s documents.
+The <cite>dict_expand_level</cite> parameter controls how deeply nested dictionaries are expanded into separate columns.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mongodf.utils.get_all_columns_of">
+<span class="sig-prename descclassname"><span class="pre">mongodf.utils.</span></span><span class="sig-name descname"><span class="pre">get_all_columns_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coll</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_expand_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/utils.html#get_all_columns_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.utils.get_all_columns_of" title="Link to this definition"></a></dt>
+<dd><p>Retrieve all unique column names from a MongoDB collection, expanding nested fields up to a specified level.</p>
+<section id="id19">
+<h2>Parameters:<a class="headerlink" href="#id19" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>coll<span class="classifier">pymongo.collection.Collection</span></dt><dd><p>The MongoDB collection from which to retrieve column names.</p>
+</dd>
+<dt>dict_expand_level<span class="classifier">int, optional</span></dt><dd><p>The level of nested dictionary expansion. Default is 0.</p>
+</dd>
+</dl>
+</section>
+<section id="id20">
+<h2>Returns:<a class="headerlink" href="#id20" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>list</dt><dd><p>A list of unique column names in dot notation.</p>
+</dd>
+</dl>
+</section>
+<section id="id21">
+<h2>Notes:<a class="headerlink" href="#id21" title="Link to this heading"></a></h2>
+<p>This function uses MongoDB’s aggregation framework to project and unwind nested fields up to the specified 
+dict_expand_level. It then collects all unique keys from the documents in the collection.</p>
+</section>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="Indices and tables" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="MongoDf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

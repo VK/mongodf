@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mongodf.dataframe &mdash; MongoDf alpha documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/mongodf.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=1f169f65"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MongoDf
+          </a>
+              <div class="version">
+                0.0.33
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../mongodf.html">Mongo DF</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MongoDf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mongodf.dataframe</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mongodf.dataframe</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2024 Viktor Krückl. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ==============================================================================</span>
+
+
+<span class="kn">from</span> <span class="nn">.filter</span> <span class="kn">import</span> <span class="n">Filter</span>
+<span class="kn">from</span> <span class="nn">.column</span> <span class="kn">import</span> <span class="n">Column</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">MongoDfException</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">flatten_dict</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">_pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">_np</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">cycle</span><span class="p">,</span> <span class="n">islice</span>
+<span class="kn">from</span> <span class="nn">pymongo</span> <span class="kn">import</span> <span class="n">MongoClient</span>
+
+
+<div class="viewcode-block" id="DataFrame">
+<a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame">[docs]</a>
+<span class="k">class</span> <span class="nc">DataFrame</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to represent a DataFrame for MongoDB collections with extended functionality for querying and metadata management.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    _host : str</span>
+<span class="sd">        The MongoDB host.</span>
+<span class="sd">    _database : str</span>
+<span class="sd">        The name of the database.</span>
+<span class="sd">    _collection : str</span>
+<span class="sd">        The name of the collection.</span>
+<span class="sd">    _columns : list</span>
+<span class="sd">        The list of columns to include in the DataFrame.</span>
+<span class="sd">    list_columns : list or set, optional</span>
+<span class="sd">        A list or set of columns that are considered to be lists and need special handling. Default is an empty list.</span>
+<span class="sd">    filter : Filter, optional</span>
+<span class="sd">        A Filter object representing the query filter. Default is None.</span>
+<span class="sd">    array_expand : bool, optional</span>
+<span class="sd">        Whether to expand arrays into separate rows. Default is True.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    _host : str</span>
+<span class="sd">        The MongoDB host.</span>
+<span class="sd">    _database : str</span>
+<span class="sd">        The name of the database.</span>
+<span class="sd">    _collection : str</span>
+<span class="sd">        The name of the collection.</span>
+<span class="sd">    columns : list</span>
+<span class="sd">        The list of columns included in the DataFrame.</span>
+<span class="sd">    _filter : Filter</span>
+<span class="sd">        The query filter for the DataFrame.</span>
+<span class="sd">    _array_expand : bool</span>
+<span class="sd">        Whether to expand arrays into separate rows.</span>
+<span class="sd">    list_columns : set</span>
+<span class="sd">        A set of columns that are considered to be lists and need special handling.</span>
+<span class="sd">    large_threshold : int</span>
+<span class="sd">        A threshold for determining when a categorical column is large. Default is 1000.</span>
+<span class="sd">    _update_col : str</span>
+<span class="sd">        The name of the column used for tracking updates. Default is &quot;__UPDATED&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_host</span><span class="p">,</span> <span class="n">_database</span><span class="p">,</span> <span class="n">_collection</span><span class="p">,</span> <span class="n">_columns</span><span class="p">,</span>
+                 <span class="n">list_columns</span><span class="o">=</span><span class="p">[],</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">array_expand</span><span class="o">=</span><span class="kc">True</span>
+                 <span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_host</span> <span class="o">=</span> <span class="n">_host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_database</span> <span class="o">=</span> <span class="n">_database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">=</span> <span class="n">_collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">_columns</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span> <span class="o">=</span> <span class="nb">filter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_array_expand</span> <span class="o">=</span> <span class="n">array_expand</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_columns</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">list_columns</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_columns</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list_columns</span> <span class="o">=</span> <span class="n">list_columns</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+
+        <span class="c1"># flag to determine when a categorical column is large</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">large_threshold</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span> <span class="o">=</span> <span class="s2">&quot;__UPDATED&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a subset of the DataFrame based on the key.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        key : str, list, or Filter</span>
+<span class="sd">            If a string, retrieves the column with that name.</span>
+<span class="sd">            If a list, retrieves a DataFrame with only the specified columns.</span>
+<span class="sd">            If a Filter, retrieves a DataFrame filtered by the specified filter.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        DataFrame or Column</span>
+<span class="sd">            A new DataFrame or Column based on the key.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">        -------</span>
+<span class="sd">        MongoDfException</span>
+<span class="sd">            If the specified columns are not available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">Filter</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">DataFrame</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+                <span class="nb">filter</span><span class="o">=</span><span class="n">key</span><span class="o">.</span><span class="fm">__and__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">),</span>
+                <span class="n">array_expand</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_array_expand</span><span class="p">,</span>
+                <span class="n">list_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">list_columns</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">key</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="n">MongoDfException</span><span class="p">(</span><span class="s2">&quot;Not all columns available&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">DataFrame</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span><span class="p">,</span>
+                <span class="n">key</span><span class="p">,</span>
+                <span class="nb">filter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">,</span>
+                <span class="n">array_expand</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_array_expand</span><span class="p">,</span>
+                <span class="n">list_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">list_columns</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MongoDfException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;column </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found!&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the data types of the columns in the DataFrame.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        pandas.Series</span>
+<span class="sd">            A Series with the data types of the columns.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">example</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">bfill</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">dtypes</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a column by name as an attribute.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            The name of the column.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        Column</span>
+<span class="sd">            The Column object for the specified column.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">        -------</span>
+<span class="sd">        MongoDfException</span>
+<span class="sd">            If the column is not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;dtypes&quot;</span><span class="p">:</span>
+            <span class="n">sample_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">example</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">bfill</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">dtypes</span>            
+            
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MongoDfException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;column </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found!&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DataFrame.compute">
+<a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.compute">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the DataFrame by querying the MongoDB collection.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        kwargs : dict</span>
+<span class="sd">            Additional parameters for the computation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        pandas.DataFrame</span>
+<span class="sd">            The resulting DataFrame after querying the MongoDB collection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">colfilter</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="n">colfilter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">()]))})</span>
+
+        <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+
+            <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
+            <span class="n">coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collection</span><span class="p">)</span>
+
+            <span class="n">query_data</span> <span class="o">=</span> <span class="n">coll</span><span class="o">.</span><span class="n">find</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+                <span class="n">colfilter</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array_expand</span><span class="p">:</span>
+
+                <span class="k">def</span> <span class="nf">create_df</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">res_df</span> <span class="o">=</span> <span class="n">_pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span>
+                        <span class="n">create_df</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">query_data</span>
+                    <span class="p">])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">res_df</span> <span class="o">=</span> <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">res_df</span> <span class="o">=</span> <span class="n">res_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">res_df</span><span class="p">)]</span>
+
+                <span class="n">res_df</span> <span class="o">=</span> <span class="n">res_df</span><span class="p">[[</span>
+                    <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">res_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]]</span>
+
+                <span class="n">res_df</span> <span class="o">=</span> <span class="n">res_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+                <span class="n">missing_cols</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">cc</span> <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">cc</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">res_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+                <span class="n">res_df</span> <span class="o">=</span> <span class="n">_pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">res_df</span><span class="p">,</span>
+                        <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                            <span class="p">[[</span><span class="n">_np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">missing_cols</span><span class="p">)],</span>
+                            <span class="n">index</span><span class="o">=</span><span class="n">res_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                            <span class="n">columns</span><span class="o">=</span><span class="n">missing_cols</span>
+                        <span class="p">)</span>
+                    <span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+                <span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">res_df</span>
+            
+            <span class="n">res_df</span> <span class="o">=</span> <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">query_data</span><span class="p">))</span>
+            <span class="n">missing_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">cc</span> <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">cc</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">res_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_cols</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">res_df</span>
+            
+            <span class="n">res_df</span> <span class="o">=</span> <span class="n">_pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">res_df</span><span class="p">,</span>
+                    <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                        <span class="p">[[</span><span class="n">_np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">missing_cols</span><span class="p">)],</span>
+                        <span class="n">index</span><span class="o">=</span><span class="n">res_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                        <span class="n">columns</span><span class="o">=</span><span class="n">missing_cols</span>
+                    <span class="p">)</span>
+                <span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>       
+
+            <span class="k">return</span> <span class="n">res_df</span>     </div>
+
+        
+
+    
+
+<div class="viewcode-block" id="DataFrame.example">
+<a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.example">[docs]</a>
+    <span class="k">def</span> <span class="nf">example</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve an example of the DataFrame with a specified number of rows.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        n : int, optional</span>
+<span class="sd">            The number of rows to retrieve. Default is 20.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        pandas.DataFrame</span>
+<span class="sd">            A DataFrame with example data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+
+        <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+
+            <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
+            <span class="n">coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collection</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">get_sampledata</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">coll</span><span class="o">.</span><span class="n">find</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;$exists&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}},</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+                    
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">flatten_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">islice</span><span class="p">(</span><span class="n">cycle</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">n</span><span class="p">))</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;error example&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">_np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span><span class="o">*</span><span class="n">n</span>
+
+                <span class="k">return</span> <span class="n">data</span>
+
+            <span class="k">def</span> <span class="nf">filter_to_single</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">sub</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">v</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">data</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">c</span><span class="p">:</span> <span class="n">get_sampledata</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span>
+            <span class="p">}</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array_expand</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">out</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">]):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">list_columns</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                        <span class="n">out</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">filter_to_single</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+
+    <span class="k">def</span> <span class="nf">__get_meta_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">older_than</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">old_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get metadata entry for a specific column.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            The column name.</span>
+<span class="sd">        val : dtype</span>
+<span class="sd">            The data type of the column.</span>
+<span class="sd">        older_than : datetime, optional</span>
+<span class="sd">            A timestamp to filter for updated values. Default is None.</span>
+<span class="sd">        old_values : dict, optional</span>
+<span class="sd">            Previous metadata values. Default is None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dict</span>
+<span class="sd">            The metadata entry for the column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">dtype</span>
+
+        <span class="k">def</span> <span class="nf">parse_object_cat</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">old_values</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;large&quot;</span> <span class="ow">in</span> <span class="n">old_values</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;large&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;cat&quot;</span><span class="p">:</span> <span class="p">[]</span>
+                    <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">older_than</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">older_than</span><span class="p">][</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+                <span class="n">cat</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="o">*</span><span class="n">cat</span><span class="p">,</span> <span class="o">*</span><span class="n">old_values</span><span class="p">[</span><span class="s2">&quot;cat&quot;</span><span class="p">]]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">large_threshold</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;large&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;cat&quot;</span><span class="p">:</span> <span class="p">[]</span>
+                <span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;cat&quot;</span><span class="p">:</span> <span class="n">cat</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">cat</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="p">}</span>
+
+        <span class="k">def</span> <span class="nf">get_updated_agg_data</span><span class="p">(</span><span class="n">mdf</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">older_than</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">query_res</span> <span class="o">=</span> <span class="n">mdf</span><span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">older_than</span><span class="p">][</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;exc &quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+                    <span class="n">query_res</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">if</span> <span class="s2">&quot;median&quot;</span> <span class="ow">in</span> <span class="n">query_res</span> <span class="ow">and</span> <span class="n">query_res</span><span class="p">[</span><span class="s2">&quot;median&quot;</span><span class="p">]:</span>
+                    <span class="n">query_res</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">old_values</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">],</span> <span class="n">query_res</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span>
+                    <span class="n">query_res</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">old_values</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">],</span> <span class="n">query_res</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">query_res</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">old_values</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">]}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">query_res</span> <span class="o">=</span> <span class="n">mdf</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> 
+
+            <span class="k">return</span> <span class="n">query_res</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">_pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">categories</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">large_threshold</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;large&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;cat&quot;</span><span class="p">:</span> <span class="p">[]</span>
+                    <span class="p">}</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;cat&quot;</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="p">}</span>
+
+            <span class="k">elif</span> <span class="n">val</span> <span class="o">==</span> <span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;O&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">parse_object_cat</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">val</span> <span class="o">==</span> <span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;bool&quot;</span>
+                <span class="p">}</span>
+            <span class="k">elif</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                <span class="n">query_res</span> <span class="o">=</span> <span class="n">get_updated_agg_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;temporal&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">query_res</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">query_res</span> <span class="o">=</span> <span class="n">get_updated_agg_data</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mf">1.0e99</span><span class="p">],</span> <span class="n">key</span><span class="p">)</span>
+
+                    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;numerical&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">query_res</span><span class="p">}</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">parse_object_cat</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="DataFrame.update_meta_cache">
+<a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.update_meta_cache">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_meta_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the metadata cache for the DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">dtype</span>
+
+        <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
+            <span class="n">meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+
+            <span class="c1"># get the old metadata</span>
+            <span class="n">old_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">meta_coll</span><span class="o">.</span><span class="n">find</span><span class="p">({}))</span>
+            <span class="n">old_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">el</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span> <span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">old_data</span><span class="p">}</span>   
+
+            <span class="c1"># use the old metadata to reconstruct self.dtypes.to_dict()</span>
+            <span class="n">dtypes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;numerical&quot;</span><span class="p">:</span> <span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span>
+                <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">),</span>
+                <span class="s2">&quot;categorical&quot;</span><span class="p">:</span> <span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;O&#39;</span><span class="p">),</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;&lt;M8[ns]&#39;</span><span class="p">),</span>
+            <span class="p">}[</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]]</span><span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">old_data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">}</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="n">dtypes_dict</span><span class="p">)</span>
+
+            <span class="c1"># if there are some missing cols use the old version to </span>
+            <span class="n">new_dtypes_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dtypes_dict</span><span class="p">])</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;new cols&quot;</span><span class="p">,</span> <span class="n">new_dtypes_dict</span><span class="p">)</span>
+            <span class="n">dtypes_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_dtypes_dict</span><span class="p">)</span>
+
+            <span class="n">dtypes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dtypes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">k</span><span class="p">}</span>
+
+            <span class="n">older_than</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">older_than</span> <span class="o">=</span> <span class="n">old_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span><span class="p">][</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span> <span class="ow">in</span> <span class="n">old_data</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">older_than</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;last_updated&quot;</span><span class="p">,</span> <span class="n">older_than</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">new_entries</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">older_than</span><span class="p">][[</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span><span class="p">]]</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="n">new_entries</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_entries</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;no new documents --&gt; no update needed&quot;</span><span class="p">)</span>
+                        <span class="k">return</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;number new documents&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_entries</span><span class="p">))</span>
+
+            <span class="c1"># update the metadata collection</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">dtypes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">meta_coll</span><span class="o">.</span><span class="n">delete_one</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
+
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">old_data</span><span class="p">:</span>
+                      <span class="k">if</span> <span class="s2">&quot;large&quot;</span> <span class="ow">in</span> <span class="n">old_data</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
+                            <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">old_data</span> <span class="ow">and</span> <span class="n">older_than</span><span class="p">:</span>
+                    <span class="n">new_entry</span> <span class="o">=</span> <span class="p">{</span>
+                         <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_entry</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">older_than</span><span class="p">,</span> <span class="n">old_data</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                    <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_entry</span> <span class="o">=</span> <span class="p">{</span>
+                         <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_entry</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+                    <span class="p">}</span>
+
+                <span class="n">meta_coll</span><span class="o">.</span><span class="n">find_one_and_update</span><span class="p">(</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;$set&quot;</span><span class="p">:</span> <span class="n">new_entry</span><span class="p">},</span>
+                    <span class="n">upsert</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DataFrame.update_meta_cache_all">
+<a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.update_meta_cache_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_meta_cache_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the entire metadata cache for the DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+
+        <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
+            <span class="n">meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+
+            <span class="n">meta_coll</span><span class="o">.</span><span class="n">drop</span><span class="p">()</span>
+
+            <span class="n">meta_coll</span><span class="o">.</span><span class="n">insert_many</span><span class="p">([</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_entry</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+                <span class="p">}</span><span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="DataFrame.get_meta">
+<a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.get_meta">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the metadata for the DataFrame.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary with metadata for each column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
+            <span class="n">meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+
+            <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="n">el</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span> <span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">meta_coll</span><span class="o">.</span><span class="n">find</span><span class="p">({},</span> <span class="p">{</span><span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})}</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">meta</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_entry</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Viktor Krückl (viktor@krueckl.de).</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

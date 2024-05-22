@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Indices and tables &mdash; MongoDf alpha documentation</title>
+  <title>MongoDf &mdash; MongoDf alpha documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="_static/css/mongodf.css" />
@@ -37,7 +37,7 @@
             MongoDf
           </a>
               <div class="version">
-                0.0.32
+                0.0.33
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -65,7 +65,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Indices and tables</li>
+      <li class="breadcrumb-item active">MongoDf</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -75,9 +75,104 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="toctree-wrapper compound">
+  <section id="mongodf">
+<span id="module-mongodf"></span><h1>MongoDf<a class="headerlink" href="#mongodf" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://github.com/VK/mongodf"><img alt="Github" src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&amp;logo=github&amp;logoColor=white" style="height: 20px;" /></a> <a class="reference internal" href="https://github.com/VK/mongodf/actions/workflows/python-publish.yml/badge.svg"><img alt="Publish Status" height="20px" src="https://github.com/VK/mongodf/actions/workflows/python-publish.yml/badge.svg" /></a> <a class="reference external" href="https://pypi.org/project/mongodf"><img alt="PyPi" src="https://img.shields.io/pypi/v/mongodf?logo=pypi" style="height: 20px;" /></a> <a class="reference external" href="https://vk.github.io/mongodf"><img alt="Documentation" height="20px" src="https://github.com/VK/mongodf/workflows/Documentation/badge.svg" /></a></p>
+<p>A mongoDB to pandas DataFrame converter with a pandas filter style.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mongodf</span>
+
+<span class="c1"># create a dataframe from a mongoDB collection</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">mongodf</span><span class="o">.</span><span class="n">from_mongo</span><span class="p">(</span><span class="s2">&quot;mongodb://mongo:27017&quot;</span><span class="p">,</span> <span class="s2">&quot;DB&quot;</span><span class="p">,</span> <span class="s2">&quot;Collection&quot;</span><span class="p">)</span>
+
+<span class="c1"># filter values</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;colA&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Test&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ColB</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))]</span>
+
+<span class="c1"># filter columns</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">&quot;colA&quot;</span><span class="p">,</span> <span class="s2">&quot;colC&quot;</span><span class="p">]]</span>
+
+<span class="c1"># compute a pandas.DataFrame</span>
+<span class="n">df</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Output:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">|</span>   <span class="o">|</span> <span class="n">colA</span>  <span class="o">|</span> <span class="n">colC</span> <span class="o">|</span>
+<span class="o">|---|</span> <span class="o">-----</span> <span class="o">|</span> <span class="o">----</span> <span class="o">|</span>
+<span class="o">|</span><span class="mi">0</span>  <span class="o">|</span> <span class="n">Test</span>  <span class="o">|</span>  <span class="n">NaN</span> <span class="o">|</span>
+<span class="o">|</span><span class="mi">1</span>  <span class="o">|</span> <span class="n">Test</span>  <span class="o">|</span>   <span class="mi">12</span> <span class="o">|</span>
+</pre></div>
+</div>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="mongodf.from_mongo">
+<span class="sig-prename descclassname"><span class="pre">mongodf.</span></span><span class="sig-name descname"><span class="pre">from_mongo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_expand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cached_meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_expand_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mongodf/utils.html#from_mongo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mongodf.from_mongo" title="Link to this definition"></a></dt>
+<dd><p>Fetch data from a MongoDB collection and return it as a DataFrame-like object.</p>
+<section id="parameters">
+<h1>Parameters:<a class="headerlink" href="#parameters" title="Link to this heading"></a></h1>
+<dl class="simple">
+<dt>host<span class="classifier">str</span></dt><dd><p>The MongoDB host address.</p>
+</dd>
+<dt>database<span class="classifier">str</span></dt><dd><p>The name of the MongoDB database.</p>
+</dd>
+<dt>collection<span class="classifier">str</span></dt><dd><p>The name of the MongoDB collection.</p>
+</dd>
+<dt>columns<span class="classifier">list, optional</span></dt><dd><p>A list of column names to include in the result. If None, columns will be inferred.</p>
+</dd>
+<dt>filter<span class="classifier">dict, optional</span></dt><dd><p>A <cite>mongodf.Filter</cite> class. If None, no filter will be applied</p>
+</dd>
+<dt>array_expand<span class="classifier">bool, optional</span></dt><dd><p>Whether to expand arrays found in the documents into separate rows. Default is True.</p>
+</dd>
+<dt>cached_meta<span class="classifier">bool, optional</span></dt><dd><p>Whether to use cached metadata for inferring columns. Default is True.</p>
+</dd>
+<dt>dict_expand_level<span class="classifier">int, optional</span></dt><dd><p>The level of dictionary expansion to perform. Default is 0.</p>
+</dd>
+<dt>meta_collection<span class="classifier">str, optional</span></dt><dd><p>The name of the collection to use for cached metadata. If None, defaults to ‘__&lt;collection&gt;_meta’.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h1>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h1>
+<dl class="simple">
+<dt>DataFrame</dt><dd><p>A DataFrame-like object containing the data from the MongoDB collection.</p>
+</dd>
+</dl>
+</section>
+<section id="notes">
+<h1>Notes:<a class="headerlink" href="#notes" title="Link to this heading"></a></h1>
+<p>If <cite>cached_meta</cite> is True and <cite>columns</cite> is None, the function will attempt to retrieve column names 
+from a meta collection (either specified by <cite>meta_collection</cite> or defaulting to ‘__&lt;collection&gt;_meta’). 
+If no columns are found in the meta collection, it will then infer the columns by analyzing the collection’s documents.
+The <cite>dict_expand_level</cite> parameter controls how deeply nested dictionaries are expanded into separate columns.</p>
+</section>
+</dd></dl>
+
+<div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="mongodf.html">Mongo DF</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongodf.html">Mongo DF</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mongodf.html#mongodf.DataFrame"><code class="docutils literal notranslate"><span class="pre">DataFrame</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.DataFrame.compute"><code class="docutils literal notranslate"><span class="pre">DataFrame.compute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.DataFrame.dtypes"><code class="docutils literal notranslate"><span class="pre">DataFrame.dtypes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.DataFrame.example"><code class="docutils literal notranslate"><span class="pre">DataFrame.example()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.DataFrame.get_meta"><code class="docutils literal notranslate"><span class="pre">DataFrame.get_meta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.DataFrame.update_meta_cache"><code class="docutils literal notranslate"><span class="pre">DataFrame.update_meta_cache()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.DataFrame.update_meta_cache_all"><code class="docutils literal notranslate"><span class="pre">DataFrame.update_meta_cache_all()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mongodf.html#mongodf.Filter"><code class="docutils literal notranslate"><span class="pre">Filter</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.Filter.inversion_map"><code class="docutils literal notranslate"><span class="pre">Filter.inversion_map</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mongodf.html#mongodf.Column"><code class="docutils literal notranslate"><span class="pre">Column</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.Column.agg"><code class="docutils literal notranslate"><span class="pre">Column.agg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.Column.isin"><code class="docutils literal notranslate"><span class="pre">Column.isin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongodf.html#mongodf.Column.unique"><code class="docutils literal notranslate"><span class="pre">Column.unique()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mongodf.html#mongodf.utils.flatten_dict"><code class="docutils literal notranslate"><span class="pre">flatten_dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongodf.html#mongodf.utils.from_mongo"><code class="docutils literal notranslate"><span class="pre">from_mongo()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongodf.html#mongodf.utils.get_all_columns_of"><code class="docutils literal notranslate"><span class="pre">get_all_columns_of()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </div>
 <section id="indices-and-tables">
