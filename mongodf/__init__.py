@@ -70,6 +70,7 @@ Output::
 from .column import Column
 from .filter import Filter
 from .dataframe import DataFrame
+from .cache import MongoDFCache
 from .utils import get_all_columns_of, from_mongo, flatten_dict
 
-__all__ = ["Column", "Filter", "DataFrame", "from_mongo", "get_all_columns_of", "flatten_dict"]
+__all__ = ["Column", "Filter", "DataFrame", "from_mongo", "get_all_columns_of", "flatten_dict", "MongoDFCache"]

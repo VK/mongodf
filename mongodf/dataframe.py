@@ -87,6 +87,7 @@ class DataFrame():
         # flag to determine when a categorical column is large
         self.large_threshold = 1000
         self._update_col = "__UPDATED"
+        self.__meta = None
 
     def __getitem__(self, key):
         """
@@ -526,7 +527,10 @@ class DataFrame():
         --------
         dict
             A dictionary with metadata for each column.
-        """        
+        """
+        if self.__meta:
+            return self.__meta
+
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
             meta_coll = db.get_collection("__" + self._collection + "_meta")
@@ -534,9 +538,12 @@ class DataFrame():
             meta = {el["name"]: el for el in meta_coll.find({}, {"_id": 0})}
 
             if len(meta) > 0:
+                self.__meta = meta
                 return meta
 
-        return {
+        self.__meta = {
             k: self.__get_meta_entry(k, val)
             for k, val in self.dtypes.to_dict().items()
         }
+
+        return self.__meta
