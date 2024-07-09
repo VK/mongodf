@@ -7,7 +7,7 @@ import os
 
 CACHE_HOST = os.getenv("CACHE_HOST", "mongodb://localhost:27017")
 CACHE_DATABASE = os.getenv("CACHE_DATABASE", "mongodfcache")
-CACHE_EXPIRE_AFTER_SECONDS = os.getenv("CACHE_EXPIRE_AFTER_SECONDS", 86400)
+CACHE_EXPIRE_AFTER_SECONDS = int(os.getenv("CACHE_EXPIRE_AFTER_SECONDS", '86400'))
 
 
 def get_meta(df, large_threshold=1000):
@@ -18,10 +18,13 @@ def get_meta(df, large_threshold=1000):
     import pandas as _pd
 
     def parse_object_cat(key):
-        cat = df[key].unique()
-        if len(cat) > large_threshold:
+        try:
+            cat = df[key].unique()
+            if len(cat) > large_threshold:
+                return {"type": "categorical", "large": True, "cat": []}
+            return {"type": "categorical", "cat": cat.tolist()}
+        except:
             return {"type": "categorical", "large": True, "cat": []}
-        return {"type": "categorical", "cat": cat.tolist()}
 
     def parse(key, val):
         if isinstance(val, _pd.CategoricalDtype):
@@ -130,6 +133,8 @@ class MongoDFCache:
                 The unique identifier for the cached dataframe
             """
 
+            bad_columns = []
+
             if identifier is None:
                 identifier = "_".join([
                     "DF len(%d)" % len(dataframe),
@@ -143,15 +148,22 @@ class MongoDFCache:
                 if array_group is False:
                     array_group = []
                 else:
+
+                    array_group = []
                     # find suitable columns to group by. conditions
                     # the column is categorical
                     # the has less unique values than the number of rows
-                    array_group = [
-                        key
-                        for key, val in dataframe.dtypes.to_dict().items()
-                        if ( val == _pd.CategoricalDtype or val == object)
-                        and len(dataframe[key].unique()) < dataframe.shape[0] * 0.9
-                    ]                    
+                    for key, val in dataframe.dtypes.to_dict().items():
+                        try:
+                            if val == _pd.CategoricalDtype or val == object:
+                                if len(dataframe[key].unique()) < dataframe.shape[0] * 0.9:
+                                    array_group.append(key)
+                        except:
+                            bad_columns.append(key)
+                            pass
+
+
+                
                     
 
             # need to make a copy of the dataframe to avoid modifying the original
@@ -172,11 +184,33 @@ class MongoDFCache:
             # get the current timestamp
             insert_timestamp = _pd.Timestamp.now()
 
+
             # compute the meta data
             meta = get_meta(dataframe)
             for key, val in meta.items():
                 val = {**val, "name": key, self._data_frame_id: frame_id, "createdAt": insert_timestamp}
                 self._meta.insert_one(val)
+
+            # remove bad columns from the array_group and from the dataframe
+            array_group = list(set(array_group) - set(bad_columns))
+            dataframe = dataframe.drop(columns=bad_columns)
+            # remove colums with nan values from the array_group
+            cols_with_nans = dataframe.columns[dataframe.isna().any()].tolist()
+            array_group = list(set(array_group) - set(cols_with_nans))
+            info = {
+                "name": identifier,
+                "createdAt": insert_timestamp,
+                self._data_frame_id: frame_id,
+                "array_group": array_group,
+                "bad_columns": bad_columns,
+                "cols_with_nans": cols_with_nans,
+            }
+            self._info.find_one_and_update(
+                {self._data_frame_id: frame_id}, {"$set": info}, upsert=True
+            )        
+
+
+
 
             # add the _data_frame_id to the dataframe
             dataframe[self._data_frame_id] = frame_id
@@ -202,15 +236,7 @@ class MongoDFCache:
                 self._data.insert_many(bulk_data)
 
 
-            info = {
-                "name": identifier,
-                "createdAt": insert_timestamp,
-                self._data_frame_id: frame_id,
-                "array_group": array_group,
-            }
-            self._info.find_one_and_update(
-                {self._data_frame_id: frame_id}, {"$set": info}, upsert=True
-            )
+
 
             return frame_id
     
