@@ -64,13 +64,13 @@ def get_meta(df, large_threshold=1000):
 class MongoDFCache:
     def __init__(
         self,
-        host,
-        database,
+        host=CACHE_HOST,
+        database=CACHE_DATABASE,
         data_collection="data",
         meta_collection="meta",
         info_collection="info",
         _data_frame_id="__data_frame_id",
-        expire_after_seconds=86400,
+        expire_after_seconds=CACHE_EXPIRE_AFTER_SECONDS,
     ):
 
         self._host = host
