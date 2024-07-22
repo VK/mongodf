@@ -237,7 +237,8 @@ def from_mongo(host, database, collection,
 
     mf = DataFrame(host, database, collection, _columns,
                    filter=filter,
-                   array_expand=array_expand
+                   array_expand=array_expand,
+                   _meta_coll=_meta_coll
                    )
 
     mf._filter = Filter(mf, filter)

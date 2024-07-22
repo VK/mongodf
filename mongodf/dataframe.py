@@ -68,7 +68,8 @@ class DataFrame():
     """    
 
     def __init__(self, _host, _database, _collection, _columns,
-                 list_columns=[], filter=None, array_expand=True
+                 list_columns=[], filter=None, array_expand=True,
+                 _meta_coll=None
                  ):
 
         self._host = _host
@@ -88,6 +89,9 @@ class DataFrame():
         self.large_threshold = 1000
         self._update_col = "__UPDATED"
         self.__meta = None
+
+        # keep track of the mongo meta collection
+        self._meta_coll = _meta_coll
 
     def __getitem__(self, key):
         """
@@ -118,7 +122,8 @@ class DataFrame():
                 self.columns,
                 filter=key.__and__(self._filter),
                 array_expand=self._array_expand,
-                list_columns=self.list_columns
+                list_columns=self.list_columns,
+                _meta_coll=self._meta_coll,
             )
 
         if isinstance(key, list):
@@ -132,7 +137,8 @@ class DataFrame():
                 key,
                 filter=self._filter,
                 array_expand=self._array_expand,
-                list_columns=self.list_columns
+                list_columns=self.list_columns,
+                _meta_coll=self._meta_coll,
             )
 
         if key in self.columns:
@@ -439,10 +445,11 @@ class DataFrame():
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
-            meta_coll = db.get_collection("__" + self._collection + "_meta")
+            if not self._meta_coll:
+                self._meta_coll = db.get_collection("__" + self._collection + "_meta")
 
             # get the old metadata
-            old_data = list(meta_coll.find({}))
+            old_data = list(self._meta_coll.find({}))
             old_data = {el["name"]: el for el in old_data}   
 
             # use the old metadata to reconstruct self.dtypes.to_dict()
@@ -480,7 +487,7 @@ class DataFrame():
             for k, val in dtypes_dict.items():
 
                 if k not in self.columns:
-                    meta_coll.delete_one({"name": k})
+                    self._meta_coll.delete_one({"name": k})
 
                 if k in self.columns and k in old_data:
                       if "large" in old_data[k]:
@@ -495,7 +502,7 @@ class DataFrame():
                          "name": k, **self.__get_meta_entry(k, val)
                     }
 
-                meta_coll.find_one_and_update(
+                self._meta_coll.find_one_and_update(
                     {"name": k},
                     {"$set": new_entry},
                     upsert=True
@@ -509,11 +516,12 @@ class DataFrame():
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
-            meta_coll = db.get_collection("__" + self._collection + "_meta")
+            if not self._meta_coll:
+                self._meta_coll = db.get_collection("__" + self._collection + "_meta")
 
-            meta_coll.drop()
+            self._meta_coll.drop()
 
-            meta_coll.insert_many([
+            self._meta_coll.insert_many([
                 {
                     "name": k, **self.__get_meta_entry(k, val)
                 }for k, val in self.dtypes.to_dict().items()
@@ -533,9 +541,10 @@ class DataFrame():
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
-            meta_coll = db.get_collection("__" + self._collection + "_meta")
+            if not self._meta_coll:
+                self._meta_coll = db.get_collection("__" + self._collection + "_meta")
 
-            meta = {el["name"]: el for el in meta_coll.find({}, {"_id": 0})}
+            meta = {el["name"]: el for el in self._meta_coll.find({}, {"_id": 0})}
 
             if len(meta) > 0:
                 self.__meta = meta
