@@ -445,11 +445,15 @@ class DataFrame():
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
-            if not self._meta_coll:
-                self._meta_coll = db.get_collection("__" + self._collection + "_meta")
+
+            # load the metadata collection if not already loaded
+            if self._meta_coll is None:
+                meta_coll = db.get_collection("__" + self._collection + "_meta")
+            else:
+                meta_coll = self._meta_coll
 
             # get the old metadata
-            old_data = list(self._meta_coll.find({}))
+            old_data = list(meta_coll.find({}))
             old_data = {el["name"]: el for el in old_data}   
 
             # use the old metadata to reconstruct self.dtypes.to_dict()
@@ -487,7 +491,7 @@ class DataFrame():
             for k, val in dtypes_dict.items():
 
                 if k not in self.columns:
-                    self._meta_coll.delete_one({"name": k})
+                    meta_coll.delete_one({"name": k})
 
                 if k in self.columns and k in old_data:
                       if "large" in old_data[k]:
@@ -502,7 +506,7 @@ class DataFrame():
                          "name": k, **self.__get_meta_entry(k, val)
                     }
 
-                self._meta_coll.find_one_and_update(
+                meta_coll.find_one_and_update(
                     {"name": k},
                     {"$set": new_entry},
                     upsert=True
@@ -516,12 +520,16 @@ class DataFrame():
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
-            if not self._meta_coll:
-                self._meta_coll = db.get_collection("__" + self._collection + "_meta")
 
-            self._meta_coll.drop()
+            # load the metadata collection if not already loaded
+            if self._meta_coll is None:
+                meta_coll = db.get_collection("__" + self._collection + "_meta")
+            else:
+                meta_coll = self._meta_coll
 
-            self._meta_coll.insert_many([
+            meta_coll.drop()
+
+            meta_coll.insert_many([
                 {
                     "name": k, **self.__get_meta_entry(k, val)
                 }for k, val in self.dtypes.to_dict().items()
@@ -541,10 +549,14 @@ class DataFrame():
 
         with MongoClient(self._host) as client:
             db = client.get_database(self._database)
-            if not self._meta_coll:
-                self._meta_coll = db.get_collection("__" + self._collection + "_meta")
 
-            meta = {el["name"]: el for el in self._meta_coll.find({}, {"_id": 0})}
+            # load the metadata collection if not already loaded
+            if self._meta_coll is None:
+                meta_coll = db.get_collection("__" + self._collection + "_meta")
+            else:
+                meta_coll = self._meta_coll
+
+            meta = {el["name"]: el for el in meta_coll.find({}, {"_id": 0})}
 
             if len(meta) > 0:
                 self.__meta = meta
