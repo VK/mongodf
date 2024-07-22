@@ -35,7 +35,7 @@
             MongoDf
           </a>
               <div class="version">
-                0.1.4b1
+                0.1.4b2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -531,11 +531,15 @@
 
         <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
             <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+
+            <span class="c1"># load the metadata collection if not already loaded</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">meta_coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span>
 
             <span class="c1"># get the old metadata</span>
-            <span class="n">old_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="o">.</span><span class="n">find</span><span class="p">({}))</span>
+            <span class="n">old_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">meta_coll</span><span class="o">.</span><span class="n">find</span><span class="p">({}))</span>
             <span class="n">old_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">el</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span> <span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">old_data</span><span class="p">}</span>   
 
             <span class="c1"># use the old metadata to reconstruct self.dtypes.to_dict()</span>
@@ -573,7 +577,7 @@
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">dtypes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="o">.</span><span class="n">delete_one</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
+                    <span class="n">meta_coll</span><span class="o">.</span><span class="n">delete_one</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
 
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">old_data</span><span class="p">:</span>
                       <span class="k">if</span> <span class="s2">&quot;large&quot;</span> <span class="ow">in</span> <span class="n">old_data</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
@@ -588,7 +592,7 @@
                          <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_entry</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
                     <span class="p">}</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="o">.</span><span class="n">find_one_and_update</span><span class="p">(</span>
+                <span class="n">meta_coll</span><span class="o">.</span><span class="n">find_one_and_update</span><span class="p">(</span>
                     <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">},</span>
                     <span class="p">{</span><span class="s2">&quot;$set&quot;</span><span class="p">:</span> <span class="n">new_entry</span><span class="p">},</span>
                     <span class="n">upsert</span><span class="o">=</span><span class="kc">True</span>
@@ -605,12 +609,16 @@
 
         <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
             <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="o">.</span><span class="n">drop</span><span class="p">()</span>
+            <span class="c1"># load the metadata collection if not already loaded</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">meta_coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="o">.</span><span class="n">insert_many</span><span class="p">([</span>
+            <span class="n">meta_coll</span><span class="o">.</span><span class="n">drop</span><span class="p">()</span>
+
+            <span class="n">meta_coll</span><span class="o">.</span><span class="n">insert_many</span><span class="p">([</span>
                 <span class="p">{</span>
                     <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_entry</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
                 <span class="p">}</span><span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
@@ -633,10 +641,14 @@
 
         <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
             <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
 
-            <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="n">el</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span> <span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span><span class="o">.</span><span class="n">find</span><span class="p">({},</span> <span class="p">{</span><span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})}</span>
+            <span class="c1"># load the metadata collection if not already loaded</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">meta_coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collection</span> <span class="o">+</span> <span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">meta_coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span>
+
+            <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="n">el</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span> <span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">meta_coll</span><span class="o">.</span><span class="n">find</span><span class="p">({},</span> <span class="p">{</span><span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})}</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">__meta</span> <span class="o">=</span> <span class="n">meta</span>
