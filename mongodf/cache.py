@@ -5,9 +5,9 @@ import json
 import hashlib
 import os
 
-CACHE_HOST = os.getenv("CACHE_HOST", "mongodb://localhost:27017")
-CACHE_DATABASE = os.getenv("CACHE_DATABASE", "mongodfcache")
-CACHE_EXPIRE_AFTER_SECONDS = int(os.getenv("CACHE_EXPIRE_AFTER_SECONDS", '86400'))
+CACHE_HOST = os.getenv("MONGODF_CACHE_HOST", "mongodb://localhost:27017")
+CACHE_DATABASE = os.getenv("MONGODF_CACHE_DATABASE", "mongodfcache")
+CACHE_EXPIRE_AFTER_SECONDS = int(os.getenv("MONGODF_CACHE_EXPIRE_SECONDS", '86400'))
 
 
 def get_meta(df, large_threshold=1000):
