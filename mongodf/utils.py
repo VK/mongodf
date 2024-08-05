@@ -201,6 +201,8 @@ def from_mongo(host, database, collection,
     from .filter import Filter
     from .dataframe import DataFrame
 
+    _meta_coll = None
+
     if cached_meta and columns is None:
         _client = MongoClient(host)
         _db = _client.get_database(database)
