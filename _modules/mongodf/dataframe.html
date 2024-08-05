@@ -35,7 +35,7 @@
             MongoDf
           </a>
               <div class="version">
-                0.1.5
+                0.1.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -170,6 +170,9 @@
 
         <span class="c1"># keep track of the mongo meta collection</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_meta_coll</span> <span class="o">=</span> <span class="n">_meta_coll</span>
+
+        <span class="c1"># hidden columns</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hidden</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -349,6 +352,9 @@
                 <span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
             <span class="p">)</span>       
 
+            <span class="c1"># remove hidden columns</span>
+            <span class="n">res_df</span> <span class="o">=</span> <span class="n">res_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hidden</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+            
             <span class="k">return</span> <span class="n">res_df</span>     </div>
 
         
