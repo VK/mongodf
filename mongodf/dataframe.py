@@ -93,6 +93,9 @@ class DataFrame():
         # keep track of the mongo meta collection
         self._meta_coll = _meta_coll
 
+        # hidden columns
+        self._hidden = []
+
     def __getitem__(self, key):
         """
         Retrieve a subset of the DataFrame based on the key.
@@ -269,6 +272,9 @@ class DataFrame():
                 ], axis=1
             )       
 
+            # remove hidden columns
+            res_df = res_df.drop(columns=self._hidden, errors="ignore")
+            
             return res_df     
         
 

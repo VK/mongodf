@@ -281,7 +281,9 @@ class MongoDFCache:
             )
             mf._filter = Filter(mf, {})
             mf = mf[mf[self._data_frame_id] == frame_id]
-            mf = mf[columns]
+            
+            # set the hidden columns
+            mf._hidden = [self._data_frame_id]
 
             # set the meta
             mf.__meta = {n["name"]: n for n in self._meta.find(filter)}
