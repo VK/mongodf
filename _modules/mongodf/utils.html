@@ -35,7 +35,7 @@
             MongoDf
           </a>
               <div class="version">
-                0.1.6
+                0.1.7
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -235,7 +235,8 @@
                <span class="n">array_expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                <span class="n">cached_meta</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                <span class="n">dict_expand_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-               <span class="n">meta_collection</span> <span class="o">=</span> <span class="kc">None</span>
+               <span class="n">meta_collection</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">show_id</span><span class="o">=</span><span class="kc">False</span>
                <span class="p">):</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -324,7 +325,8 @@
     <span class="n">mf</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="n">collection</span><span class="p">,</span> <span class="n">_columns</span><span class="p">,</span>
                    <span class="nb">filter</span><span class="o">=</span><span class="nb">filter</span><span class="p">,</span>
                    <span class="n">array_expand</span><span class="o">=</span><span class="n">array_expand</span><span class="p">,</span>
-                   <span class="n">_meta_coll</span><span class="o">=</span><span class="n">_meta_coll</span>
+                   <span class="n">_meta_coll</span><span class="o">=</span><span class="n">_meta_coll</span><span class="p">,</span>
+                   <span class="n">_show_id</span><span class="o">=</span><span class="n">show_id</span>
                    <span class="p">)</span>
 
     <span class="n">mf</span><span class="o">.</span><span class="n">_filter</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">mf</span><span class="p">,</span> <span class="nb">filter</span><span class="p">)</span>
