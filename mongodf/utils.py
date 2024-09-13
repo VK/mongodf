@@ -151,7 +151,8 @@ def from_mongo(host, database, collection,
                array_expand=True,
                cached_meta=True,
                dict_expand_level=0,
-               meta_collection = None
+               meta_collection = None,
+               show_id=False
                ):
     
     """
@@ -240,7 +241,8 @@ def from_mongo(host, database, collection,
     mf = DataFrame(host, database, collection, _columns,
                    filter=filter,
                    array_expand=array_expand,
-                   _meta_coll=_meta_coll
+                   _meta_coll=_meta_coll,
+                   _show_id=show_id
                    )
 
     mf._filter = Filter(mf, filter)

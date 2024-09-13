@@ -65,11 +65,14 @@ class DataFrame():
         A threshold for determining when a categorical column is large. Default is 1000.
     _update_col : str
         The name of the column used for tracking updates. Default is "__UPDATED".
+    _show_id : bool
+        Whether to show the document ID in the DataFrame. Default is False.
     """    
 
     def __init__(self, _host, _database, _collection, _columns,
                  list_columns=[], filter=None, array_expand=True,
-                 _meta_coll=None
+                 _meta_coll=None,
+                 _show_id=False
                  ):
 
         self._host = _host
@@ -77,6 +80,7 @@ class DataFrame():
         self._collection = _collection
         self.columns = _columns
         self._filter = filter
+        self._show_id = _show_id
         self._array_expand = array_expand
         if isinstance(list_columns, list):
             self.list_columns = set(list_columns)
@@ -190,7 +194,7 @@ class DataFrame():
         else:
             raise MongoDfException(f"column {key} not found!")
 
-    def compute(self, **kwargs):
+    def compute(self, show_id=None, **kwargs):
         """
         Compute the DataFrame by querying the MongoDB collection.
 
@@ -203,11 +207,19 @@ class DataFrame():
         --------
         pandas.DataFrame
             The resulting DataFrame after querying the MongoDB collection.
-        """        
-        colfilter = {"_id": 0}
+        """
+
+        # fallback to the default show_id if not specified
+        show_id = show_id if show_id is not None else self._show_id
+
+        # filter out the id column if not requested
+        colfilter = {"_id": 0} if not show_id else {"_id": 1} 
+
+        # add the columns to the filter
         colfilter.update(
             {c: 1 for c in list(set([*self.columns, *self._filter.config.keys()]))})
 
+        # query the MongoDB collection
         with MongoClient(self._host) as client:
 
             db = client.get_database(self._database)
@@ -218,6 +230,7 @@ class DataFrame():
                 colfilter
             )
 
+            # expand the array data into separate rows
             if self._array_expand:
 
                 def create_df(d):
@@ -232,6 +245,10 @@ class DataFrame():
                     ])
                 except ValueError:
                     res_df = _pd.DataFrame()
+
+                # cast the _id column to string if it exists
+                if "_id" in res_df.columns:
+                    res_df["_id"] = res_df["_id"].astype(str)
 
                 if len(self._filter.config) != 0:
                     res_df = res_df[self._filter.func(res_df)]
