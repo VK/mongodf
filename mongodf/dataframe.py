@@ -218,6 +218,8 @@ class DataFrame():
         # add the columns to the filter
         colfilter.update(
             {c: 1 for c in list(set([*self.columns, *self._filter.config.keys()]))})
+        
+        print(colfilter)
 
         # query the MongoDB collection
         with MongoClient(self._host) as client:
@@ -252,11 +254,6 @@ class DataFrame():
 
                 if len(self._filter.config) != 0:
                     res_df = res_df[self._filter.func(res_df)]
-
-                res_df = res_df[[
-                    c for c in self.columns if c in res_df.columns]]
-
-                res_df = res_df.copy()
 
                 missing_cols = [
                     cc for cc in self.columns if cc not in res_df.columns]
