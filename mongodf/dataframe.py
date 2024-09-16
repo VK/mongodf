@@ -219,8 +219,6 @@ class DataFrame():
         colfilter.update(
             {c: 1 for c in list(set([*self.columns, *self._filter.config.keys()]))})
         
-        print(colfilter)
-
         # query the MongoDB collection
         with MongoClient(self._host) as client:
 
@@ -254,9 +252,6 @@ class DataFrame():
                 # cast the _id column to string if it exists
                 if "_id" in res_df.columns:
                     res_df["_id"] = res_df["_id"].astype(str)                    
-
-                if len(self._filter.config) != 0:
-                    res_df = res_df[self._filter.func(res_df)]
 
                 missing_cols = [
                     cc for cc in self.columns if cc not in res_df.columns]
