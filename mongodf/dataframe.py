@@ -246,12 +246,12 @@ class DataFrame():
                 except ValueError:
                     res_df = _pd.DataFrame()
 
-                # cast the _id column to string if it exists
-                if "_id" in res_df.columns:
-                    res_df["_id"] = res_df["_id"].astype(str)
-
                 if len(self._filter.config) != 0:
                     res_df = res_df[self._filter.func(res_df)]
+
+                # cast the _id column to string if it exists
+                if "_id" in res_df.columns:
+                    res_df["_id"] = res_df["_id"].astype(str)                    
 
                 res_df = res_df[[
                     c for c in self.columns if c in res_df.columns]]
@@ -291,6 +291,10 @@ class DataFrame():
 
             # remove hidden columns
             res_df = res_df.drop(columns=self._hidden, errors="ignore")
+
+            # cast the _id column to string if it exists
+            if "_id" in res_df.columns:
+                res_df["_id"] = res_df["_id"].astype(str)            
             
             return res_df     
         
@@ -486,8 +490,6 @@ class DataFrame():
                 "categorical": dtype('O'),
                 "temporal": dtype('<M8[ns]'),
             }[v['type']]for k,v in old_data.items() if "type" in v}
-
-            print(dtypes_dict)
 
             # if there are some missing cols use the old version to 
             new_dtypes_dict = self.__getitem__([c for c in self.columns if c not in dtypes_dict]).dtypes.to_dict()

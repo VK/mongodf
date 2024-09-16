@@ -121,7 +121,11 @@ class Column():
         --------
         Filter
             A Filter object with the specified condition.
-        """        
+        """
+        if self._name == "_id":
+            from bson import ObjectId
+            array = [ObjectId(x) if isinstance(x, str) else x for x in array]
+
         return Filter(self._mf, {self._name: self._query_value("$in", array)},
          lambda x: x[self._name].isin(array)  if self._name in x.columns else True)
 
