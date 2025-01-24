@@ -390,7 +390,7 @@ class MongoDFCache:
 
                 if "median" in val and "median" in old_meta[key]:
                     if val["type"] == "temporal":
-                        old_meta[key]["median"] = _pd.Timestamp((val["median"].to_pydatetime() + old_meta[key]["median"].to_pydatetime()) / 2)
+                        old_meta[key]["median"] = _pd.to_datetime(val["median"]) + (_pd.to_datetime(old_meta[key]["median"]) - _pd.to_datetime(val["median"])) / 2
                     else:
                         old_meta[key]["median"] = (val["median"] + old_meta[key]["median"]) / 2
 
