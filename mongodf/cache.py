@@ -389,7 +389,10 @@ class MongoDFCache:
                     old_meta[key]["max"] = max(val["max"], old_meta[key]["max"])
 
                 if "median" in val and "median" in old_meta[key]:
-                    old_meta[key]["median"] = (val["median"] + old_meta[key]["median"]) / 2
+                    if val["type"] == "temporal":
+                        old_meta[key]["median"] = _pd.Timestamp((val["median"].to_pydatetime() + old_meta[key]["median"].to_pydatetime()) / 2)
+                    else:
+                        old_meta[key]["median"] = (val["median"] + old_meta[key]["median"]) / 2
 
                 self._meta.find_one_and_update(
                     {self._data_frame_id: frame_id, "name": key},
