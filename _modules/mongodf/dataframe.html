@@ -1,23 +1,21 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>mongodf.dataframe &mdash; MongoDf alpha documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/mongodf.css" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=1f169f65"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1f169f65"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -34,9 +32,6 @@
           <a href="../../index.html" class="icon icon-home">
             MongoDf
           </a>
-              <div class="version">
-                0.1.10
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -90,19 +85,19 @@
 <span class="c1"># ==============================================================================</span>
 
 
-<span class="kn">from</span> <span class="nn">.filter</span> <span class="kn">import</span> <span class="n">Filter</span>
-<span class="kn">from</span> <span class="nn">.column</span> <span class="kn">import</span> <span class="n">Column</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">MongoDfException</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">flatten_dict</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">_pd</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">_np</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">cycle</span><span class="p">,</span> <span class="n">islice</span>
-<span class="kn">from</span> <span class="nn">pymongo</span> <span class="kn">import</span> <span class="n">MongoClient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Filter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.column</span><span class="w"> </span><span class="kn">import</span> <span class="n">Column</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.exception</span><span class="w"> </span><span class="kn">import</span> <span class="n">MongoDfException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">flatten_dict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cycle</span><span class="p">,</span> <span class="n">islice</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymongo</span><span class="w"> </span><span class="kn">import</span> <span class="n">MongoClient</span>
 
 
 <div class="viewcode-block" id="DataFrame">
 <a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame">[docs]</a>
-<span class="k">class</span> <span class="nc">DataFrame</span><span class="p">():</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataFrame</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A class to represent a DataFrame for MongoDB collections with extended functionality for querying and metadata management.</span>
 
@@ -147,7 +142,7 @@
 <span class="sd">        Whether to show the document ID in the DataFrame. Default is False.</span>
 <span class="sd">    &quot;&quot;&quot;</span>    
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_host</span><span class="p">,</span> <span class="n">_database</span><span class="p">,</span> <span class="n">_collection</span><span class="p">,</span> <span class="n">_columns</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_host</span><span class="p">,</span> <span class="n">_database</span><span class="p">,</span> <span class="n">_collection</span><span class="p">,</span> <span class="n">_columns</span><span class="p">,</span>
                  <span class="n">list_columns</span><span class="o">=</span><span class="p">[],</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">array_expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">_meta_coll</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">_show_id</span><span class="o">=</span><span class="kc">False</span>
@@ -178,7 +173,7 @@
         <span class="c1"># hidden columns</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hidden</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve a subset of the DataFrame based on the key.</span>
 
@@ -232,7 +227,7 @@
             <span class="k">raise</span> <span class="n">MongoDfException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;column </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found!&quot;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the data types of the columns in the DataFrame.</span>
 
@@ -244,7 +239,7 @@
         <span class="n">sample_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">example</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">bfill</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">dtypes</span>
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a column by name as an attribute.</span>
 
@@ -274,7 +269,7 @@
 
 <div class="viewcode-block" id="DataFrame.compute">
 <a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.compute">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the DataFrame by querying the MongoDB collection.</span>
 
@@ -313,7 +308,7 @@
             <span class="c1"># expand the array data into separate rows</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array_expand</span><span class="p">:</span>
 
-                <span class="k">def</span> <span class="nf">create_df</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">create_df</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="k">return</span> <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
                     <span class="k">except</span><span class="p">:</span>
@@ -349,6 +344,10 @@
                 <span class="k">return</span> <span class="n">res_df</span>
             
             <span class="n">res_df</span> <span class="o">=</span> <span class="n">_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">query_data</span><span class="p">))</span>
+
+            <span class="c1"># remove hidden columns</span>
+            <span class="n">res_df</span> <span class="o">=</span> <span class="n">res_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hidden</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
             <span class="n">missing_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">cc</span> <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">cc</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">res_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_cols</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">res_df</span>
@@ -379,7 +378,7 @@
 
 <div class="viewcode-block" id="DataFrame.example">
 <a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.example">[docs]</a>
-    <span class="k">def</span> <span class="nf">example</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve an example of the DataFrame with a specified number of rows.</span>
 
@@ -399,7 +398,7 @@
             <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
             <span class="n">coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collection</span><span class="p">)</span>
 
-            <span class="k">def</span> <span class="nf">get_sampledata</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">get_sampledata</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">coll</span><span class="o">.</span><span class="n">find</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;$exists&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}},</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
                     
@@ -417,7 +416,7 @@
 
                 <span class="k">return</span> <span class="n">data</span>
 
-            <span class="k">def</span> <span class="nf">filter_to_single</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">filter_to_single</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                     <span class="n">sub</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">v</span><span class="p">]</span>
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -442,7 +441,7 @@
 
 
 
-    <span class="k">def</span> <span class="nf">__get_meta_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">older_than</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">old_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__get_meta_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">older_than</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">old_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get metadata entry for a specific column.</span>
 
@@ -462,9 +461,9 @@
 <span class="sd">        dict</span>
 <span class="sd">            The metadata entry for the column.</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
-        <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">dtype</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">dtype</span>
 
-        <span class="k">def</span> <span class="nf">parse_object_cat</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">parse_object_cat</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
 
             <span class="k">if</span> <span class="n">old_values</span><span class="p">:</span>
                 <span class="k">if</span> <span class="s2">&quot;large&quot;</span> <span class="ow">in</span> <span class="n">old_values</span><span class="p">:</span>
@@ -491,7 +490,7 @@
                 <span class="s2">&quot;cat&quot;</span><span class="p">:</span> <span class="n">cat</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">cat</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
             <span class="p">}</span>
 
-        <span class="k">def</span> <span class="nf">get_updated_agg_data</span><span class="p">(</span><span class="n">mdf</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_updated_agg_data</span><span class="p">(</span><span class="n">mdf</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">older_than</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">query_res</span> <span class="o">=</span> <span class="n">mdf</span><span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_col</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">older_than</span><span class="p">][</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
@@ -545,11 +544,11 @@
 
 <div class="viewcode-block" id="DataFrame.update_meta_cache">
 <a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.update_meta_cache">[docs]</a>
-    <span class="k">def</span> <span class="nf">update_meta_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_meta_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the metadata cache for the DataFrame.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">dtype</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">dtype</span>
 
         <span class="k">with</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_host</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
             <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database</span><span class="p">)</span>
@@ -622,7 +621,7 @@
 
 <div class="viewcode-block" id="DataFrame.update_meta_cache_all">
 <a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.update_meta_cache_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">update_meta_cache_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_meta_cache_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the entire metadata cache for the DataFrame.</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
@@ -647,7 +646,7 @@
 
 <div class="viewcode-block" id="DataFrame.get_meta">
 <a class="viewcode-back" href="../../mongodf.html#mongodf.DataFrame.get_meta">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the metadata for the DataFrame.</span>
 
@@ -681,6 +680,9 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__meta</span></div>
 </div>
+
+    
+
 
 </pre></div>
 
