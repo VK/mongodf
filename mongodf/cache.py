@@ -381,6 +381,7 @@ class MongoDFCache:
                 if "cat" in val and "cat" in old_meta[key]:
                     if len(val["cat"]) > 0:
                         old_meta[key]["cat"] = list(set(old_meta[key]["cat"] + val["cat"]))
+                    old_meta[key]["cat"] = list(set(old_meta[key]["cat"]))
 
                 if "min" in val and "min" in old_meta[key]:
                     old_meta[key]["min"] = min(val["min"], old_meta[key]["min"])
@@ -389,9 +390,7 @@ class MongoDFCache:
                     old_meta[key]["max"] = max(val["max"], old_meta[key]["max"])
 
                 if "median" in val and "median" in old_meta[key]:
-                    if val["type"] == "temporal":
-                        old_meta[key]["median"] = _pd.to_datetime(val["median"]) + (_pd.to_datetime(old_meta[key]["median"]) - _pd.to_datetime(val["median"])) / 2
-                    else:
+                    if val["type"] != "temporal":
                         old_meta[key]["median"] = (val["median"] + old_meta[key]["median"]) / 2
 
                 self._meta.find_one_and_update(
