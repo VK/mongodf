@@ -378,25 +378,35 @@ class MongoDFCache:
         for key, val in new_meta.items():
             if key in old_meta:
 
-                if "cat" in val and "cat" in old_meta[key]:
-                    if len(val["cat"]) > 0:
-                        old_meta[key]["cat"] = list(set(old_meta[key]["cat"] + val["cat"]))
-                    old_meta[key]["cat"] = list(set(old_meta[key]["cat"]))
+                try:
 
-                if "min" in val and "min" in old_meta[key]:
-                    old_meta[key]["min"] = min(val["min"], old_meta[key]["min"])
+                    if "cat" in val and "cat" in old_meta[key]:
+                        if len(val["cat"]) > 0:
+                            old_meta[key]["cat"] = list(set(old_meta[key]["cat"] + val["cat"]))
+                        old_meta[key]["cat"] = list(set(old_meta[key]["cat"]))
 
-                if "max" in val and "max" in old_meta[key]:
-                    old_meta[key]["max"] = max(val["max"], old_meta[key]["max"])
+                    if "min" in val and "min" in old_meta[key]:
+                        old_meta[key]["min"] = min(val["min"], old_meta[key]["min"])
 
-                if "median" in val and "median" in old_meta[key]:
-                    if val["type"] != "temporal":
-                        old_meta[key]["median"] = (val["median"] + old_meta[key]["median"]) / 2
+                    if "max" in val and "max" in old_meta[key]:
+                        old_meta[key]["max"] = max(val["max"], old_meta[key]["max"])
 
-                self._meta.find_one_and_update(
-                    {self._data_frame_id: frame_id, "name": key},
-                    {"$set": old_meta[key]},
-                )
+                    if "median" in val and "median" in old_meta[key]:
+                        
+                        if val["type"] == "temporal":
+                            old_meta[key]["median"] = old_meta[key]["max"]
+                        else:
+                            old_meta[key]["median"] = (val["median"] + old_meta[key]["median"]) / 2
+
+
+                    res = self._meta.find_one_and_update(
+                        {self._data_frame_id: frame_id, "name": key},
+                        {"$set": old_meta[key]},
+                    )
+                except Exception as e:
+                    print(f"Error updating {key} (frame id {frame_id}) in meta: {e}")
+                    
+
             else:
                 val = {**val, "name": key, self._data_frame_id: frame_id}
                 self._meta.insert_one(val)
@@ -411,6 +421,13 @@ class MongoDFCache:
         dataframe[self._data_frame_id] = frame_id
         # add the createdAt column to the dataframe
         dataframe["createdAt"] = insert_timestamp
+
+        # transform every temporal column to datetime64
+        for key, val in dataframe.dtypes.to_dict().items():
+            if isinstance(val, (_pd.Timestamp, _pd.Timedelta, _np.datetime64)):
+                #dataframe[key] = _pd.to_datetime(dataframe[key])
+                #drop
+                dataframe = dataframe.drop(columns=[key])
 
         # add new new data to the cache
         if len(array_group) == 0:
@@ -443,12 +460,3 @@ class MongoDFCache:
             {self._data_frame_id: frame_id}, {"$set": {"createdAt": insert_timestamp}}
         )
         
-
-        
-        
-
-
-        
-
-
-
