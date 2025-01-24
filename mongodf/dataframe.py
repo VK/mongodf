@@ -269,6 +269,10 @@ class DataFrame():
                 return res_df
             
             res_df = _pd.DataFrame(list(query_data))
+
+            # remove hidden columns
+            res_df = res_df.drop(columns=self._hidden, errors="ignore")
+
             missing_cols = [cc for cc in self.columns if cc not in res_df.columns]
             if len(missing_cols) == 0:
                 return res_df
@@ -588,3 +592,6 @@ class DataFrame():
         }
 
         return self.__meta
+    
+
+

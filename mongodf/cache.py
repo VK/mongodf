@@ -101,7 +101,8 @@ class MongoDFCache:
         # create index for the data_frame_id if it doesn't exist
         self._info.create_index(self._data_frame_id, unique=True)
         # create expiry index if it doesn't exist
-        self._info.create_index("createdAt", expireAfterSeconds=expire_after_seconds)
+
+        self._info.create_index("createdAt", expireAfterSeconds=expire_after_seconds, background=True)
 
 
     def get_frame_id(self, identifier):
@@ -299,5 +300,153 @@ class MongoDFCache:
             self._meta.update_many(filter, {"$set": {"createdAt": access_timestamp}})
             self._data.update_many(filter, {"$set": {"createdAt": access_timestamp}})
 
+            mf.frame_id = frame_id
 
             return mf
+    
+    def delete_dataframe(self, identifier):
+        """
+        Delete a dataframe from the cache.
+
+        Parameters:
+        - identifier: str | object
+            The identifier for the dataframe.
+        """
+        if self.is_frame_id(identifier):
+            frame_id = identifier
+        else:
+            frame_id = self.get_frame_id(identifier)
+
+        filter = {self._data_frame_id: frame_id}
+        self._data.delete_many(filter)
+        self._meta.delete_many(filter)
+        self._info.delete_many(filter)
+
+
+    def list_dataframes(self):
+        """
+        List all the dataframes in the cache.
+
+        Returns:
+        - dataframes: list
+            A list of dictionaries with the dataframe information.
+        """
+        dataframes = list(self._info.find({}, {"_id": 0}))
+        return dataframes
+    
+
+    def clear_cache(self):
+        """
+        Clear the cache.
+        """
+        self._data.drop()
+        self._meta.drop()
+        self._info.drop()
+
+
+    def append_cache_dataframe(self, dataframe, identifier):
+        """
+        Append a dataframe to the cache.
+
+        Parameters:
+        - identifier: str
+            The identifier for the dataframe.
+        - dataframe: pandas DataFrame
+            The dataframe to cache.
+        """
+        
+        # get the information of the existing dataframe
+        if self.is_frame_id(identifier):
+            frame_id = identifier
+        else:
+            frame_id = self.get_frame_id(identifier)
+
+        # check the properties of the existing dataframe
+        info = self._info.find_one({self._data_frame_id: frame_id})
+        array_group = info.get("array_group", [])
+        bad_columns = info.get("bad_columns", [])
+        cols_with_nans = info.get("cols_with_nans", [])
+        columns = [n["name"] for n in self._meta.find({self._data_frame_id: frame_id}, {"name": 1, "_id": 0})]
+
+        if len(bad_columns) > 0:
+            dataframe = dataframe.drop(columns=bad_columns)
+
+        # update the metadata
+        new_meta = get_meta(dataframe)
+        old_meta = {n["name"]: n for n in self._meta.find({self._data_frame_id: frame_id})}
+
+        for key, val in new_meta.items():
+            if key in old_meta:
+
+                if "cat" in val and "cat" in old_meta[key]:
+                    if len(val["cat"]) > 0:
+                        old_meta[key]["cat"] = list(set(old_meta[key]["cat"] + val["cat"]))
+
+                if "min" in val and "min" in old_meta[key]:
+                    old_meta[key]["min"] = min(val["min"], old_meta[key]["min"])
+
+                if "max" in val and "max" in old_meta[key]:
+                    old_meta[key]["max"] = max(val["max"], old_meta[key]["max"])
+
+                if "median" in val and "median" in old_meta[key]:
+                    old_meta[key]["median"] = (val["median"] + old_meta[key]["median"]) / 2
+
+                self._meta.find_one_and_update(
+                    {self._data_frame_id: frame_id, "name": key},
+                    {"$set": old_meta[key]},
+                )
+            else:
+                val = {**val, "name": key, self._data_frame_id: frame_id}
+                self._meta.insert_one(val)
+
+        
+        # get the current timestamp
+        insert_timestamp = _pd.Timestamp.now()
+
+
+
+        # add the _data_frame_id to the dataframe
+        dataframe[self._data_frame_id] = frame_id
+        # add the createdAt column to the dataframe
+        dataframe["createdAt"] = insert_timestamp
+
+        # add new new data to the cache
+        if len(array_group) == 0:
+            data = dataframe.to_dict(orient="records")
+            # insert the _data_frame_id into
+            self._data.insert_many(data)
+        else:
+            data = dataframe.groupby(array_group).apply(
+                lambda x: x.to_dict(orient="list")
+            )
+            bulk_data = []
+            for group, records in data.items():
+                if isinstance(group, tuple):
+                    group = dict(zip(array_group, group))
+                # condense the records. If all entries in a list are the same, we can use a scalar
+                records = {k: v[0] if len(set(v)) == 1 else v for k, v in records.items()}
+                
+                bulk_data.append({**group, **records})
+            self._data.insert_many(bulk_data)
+
+
+        # update the access timestamp using the insert_timestamp
+        self._info.find_one_and_update(
+            {self._data_frame_id: frame_id}, {"$set": {"createdAt": insert_timestamp}}
+        )
+        self._meta.update_many(
+            {self._data_frame_id: frame_id}, {"$set": {"createdAt": insert_timestamp}}
+        )
+        self._data.update_many(
+            {self._data_frame_id: frame_id}, {"$set": {"createdAt": insert_timestamp}}
+        )
+        
+
+        
+        
+
+
+        
+
+
+
