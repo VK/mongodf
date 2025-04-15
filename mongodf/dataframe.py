@@ -188,6 +188,28 @@ class DataFrame():
         if key == "dtypes":
             sample_df = self.example(20).ffill(axis=0).bfill(axis=0)
             return sample_df.dtypes            
+        
+        if key == "columns":
+            return self.columns
+        
+        if key == "filter":
+            return self._filter
+        
+        if key == "__meta":
+            return self.__meta
+        
+        if key == "list_columns":
+            return self.list_columns
+        
+        if key == "large_threshold":
+            return self.large_threshold
+        
+        if key == "_update_col":
+            return self._update_col
+        
+        if key == "_show_id":
+            return self._show_id
+
             
         if key in self.columns:
             return Column(self, key)
@@ -266,6 +288,9 @@ class DataFrame():
                     ], axis=1
                 )
 
+                if not show_id and "__data_frame_id" in res_df.columns:
+                    res_df = res_df.drop(columns=["__data_frame_id"])
+
                 return res_df
             
             res_df = _pd.DataFrame(list(query_data))
@@ -293,7 +318,11 @@ class DataFrame():
 
             # cast the _id column to string if it exists
             if "_id" in res_df.columns:
-                res_df["_id"] = res_df["_id"].astype(str)            
+                res_df["_id"] = res_df["_id"].astype(str)    
+
+
+            if not show_id and "__data_frame_id" in res_df.columns:
+                res_df = res_df.drop(columns=["__data_frame_id"])                        
             
             return res_df     
         
@@ -586,6 +615,7 @@ class DataFrame():
                 self.__meta = meta
                 return meta
 
+        
         self.__meta = {
             k: self.__get_meta_entry(k, val)
             for k, val in self.dtypes.to_dict().items()
